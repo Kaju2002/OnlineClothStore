@@ -7,7 +7,7 @@ import Footer from "./components/Footer";
 import Login from "./pages/Login";
 function App() {
   return (
-    <div className="min-h-screen px-16 flex flex-col">
+    <div className="min-h-screen px-4 md:px-16 flex flex-col">
       <Navbar />
       <main className="flex-1">
         <Routes>
