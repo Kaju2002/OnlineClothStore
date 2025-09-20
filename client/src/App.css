@@ -40,3 +40,32 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Footer styles */
+.footer-description {
+  padding: 0 0 19px;
+  display: block;
+  font: 14px / 24px Raleway, sans-serif;
+  color: #444;
+}
+
+.footer-title {
+  padding: 3px 0 17px;
+  display: block;
+  font: 400 20px / 24px 'Josefin Sans', sans-serif;
+  text-transform: capitalize;
+  color: #000;
+}
+
+.footer-nav__link {
+  padding: 0 0 0 15px;
+  display: block;
+  position: relative;
+  font: 14px / 24px Raleway, sans-serif;
+  color: #444;
+  text-decoration: none;
+}
+
+.footer-nav__link:hover {
+  color: #000;
+}

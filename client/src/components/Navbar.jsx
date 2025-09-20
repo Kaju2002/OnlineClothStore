@@ -1,5 +1,5 @@
 // Navbar.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Search,
   User,
@@ -13,12 +13,32 @@ import {
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const userDropdownRef = useRef(null);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const handleDropdown = (dropdown) => {
     setActiveDropdown(activeDropdown === dropdown ? null : dropdown);
   };
+
+  const toggleUserDropdown = () => {
+    setIsUserDropdownOpen(!isUserDropdownOpen);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
+        setIsUserDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100  transition-all duration-300">
@@ -44,7 +64,7 @@ const Navbar = () => {
           <ul className="hidden lg:flex items-center space-x-8 xl:space-x-12">
             <li>
               <a
-                href="#"
+                href="/"
                 className="text-sm font-medium text-gray-700 hover:text-black transition-colors duration-200 relative group tracking-[0.05em]"
               >
                 Home
@@ -112,9 +132,42 @@ const Navbar = () => {
             </button>
 
             {/* User Account Button */}
-            <button className="p-2 rounded-full text-gray-700 hover:text-black hover:bg-gray-50 transition-all duration-200 transform hover:scale-110">
-              <User size={20} strokeWidth={1.5} />
-            </button>
+            <div className="relative" ref={userDropdownRef}>
+              <button 
+                onClick={toggleUserDropdown}
+                className="p-2 rounded-full text-gray-700 hover:text-black hover:bg-gray-50 transition-all duration-200 transform hover:scale-110"
+              >
+                <User size={20} strokeWidth={1.5} />
+              </button>
+
+              {/* User Dropdown Menu */}
+              {isUserDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50">
+                  <a
+                    href="#"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    Login
+                  </a>
+                  <a
+                    href="/register"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    Sign Up
+                  </a>
+                  <hr className="my-2 border-gray-100" />
+                  <a
+                    href="#"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    Logout
+                  </a>
+                </div>
+              )}
+            </div>
 
             {/* Shopping Cart Button */}
             <button className="relative p-2 rounded-full text-gray-700 hover:text-black hover:bg-gray-50 transition-all duration-200 transform hover:scale-110 group">
