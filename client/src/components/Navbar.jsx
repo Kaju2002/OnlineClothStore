@@ -144,7 +144,7 @@ const Navbar = () => {
               {isUserDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50">
                   <a
-                    href="#"
+                    href="/login"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200"
                     onClick={() => setIsUserDropdownOpen(false)}
                   >
