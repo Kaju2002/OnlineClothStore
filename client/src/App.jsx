@@ -8,6 +8,8 @@ import Login from "./pages/Login";
 import ShopPage from "./pages/Product";
 import ProductDetail from "./pages/ProductDetail";
 import CheckoutPage from "./pages/CheckoutPage";
+import OrderDetailsPage from "./pages/OrderDetailsPage";
+import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 function App() {
   return (
     <div className="min-h-screen px-4 md:px-16 flex flex-col">
@@ -21,6 +23,8 @@ function App() {
           <Route path="/product" element={<ShopPage />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order-details" element={<OrderDetailsPage />} />
+          <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
         </Routes>
       </main>
       <Footer />

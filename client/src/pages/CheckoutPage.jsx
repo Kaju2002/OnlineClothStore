@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import { Trash2, Plus, Minus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
+import ProductHeader from "../components/ProductHeader";
 
 const CheckoutPage = () => {
+  const navigate = useNavigate();
+  
   const [cartItems, setCartItems] = useState([
     {
       id: 1,
@@ -53,9 +57,22 @@ const CheckoutPage = () => {
     console.log("Promo code:", promoCode);
   };
 
+  const handleCheckout = () => {
+    // Navigate to order details page
+    navigate("/order-details");
+  };
+
   return (
     <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      {/* Cart Header */}
+      <ProductHeader 
+        title="Cart"
+        breadcrumbText="Cart"
+        bannerImage="https://mollee-html-ten.vercel.app/assets/img/banner-cart.jpg"
+        altText="Cart Banner"
+      />
+      
+      <div className="container mx-auto px-4 py-8 max-w-6xl mt-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Cart Items - Left Side */}
           <div className="lg:col-span-8 space-y-6">
@@ -315,12 +332,13 @@ const CheckoutPage = () => {
 
               {/* Checkout Button */}
               <Button
+                onClick={handleCheckout}
                 className="w-full bg-black text-white hover:bg-gray-800 py-4"
                 style={{
                   font: "600 16px / 24px Raleway, sans-serif",
                 }}
               >
-                Checkout
+                Proceed to Order Details
               </Button>
             </div>
           </div>
