@@ -11,6 +11,8 @@ import CheckoutPage from "./pages/CheckoutPage";
 import OrderDetailsPage from "./pages/OrderDetailsPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import ProfilePage from "./pages/ProfilePage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import SetNewPasswordPage from "./pages/SetNewPasswordPage";
 function App() {
   return (
     <div className="min-h-screen px-4 md:px-16 flex flex-col">
@@ -27,6 +29,8 @@ function App() {
           <Route path="/order-details" element={<OrderDetailsPage />} />
           <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/set-new-password" element={<SetNewPasswordPage />} />
         </Routes>
       </main>
       <Footer />
