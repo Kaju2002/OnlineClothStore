@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Heart, Star, Plus, Minus } from 'lucide-react';
 import { Button } from '../ui/button';
 import ProductReviews from '../components/ProductReviews';
@@ -6,32 +7,130 @@ import ProductHeader from '../components/ProductHeader';
 import ReviewedByYouSection from '../components/ReviewedByYouSection';
 
 const ProductDetail = () => {
-  const [selectedColor, setSelectedColor] = useState('S');
-  const [selectedSize, setSelectedSize] = useState('S');
+  const { id } = useParams();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
 
-  const product = {
-    id: 1,
-    name: "Knitted Sweater",
-    price: 35.99,
-    originalPrice: 42.99,
-    rating: 4,
-    reviewCount: 23,
-    description: "Stylish shirt from the Fishbone collection. Modal made from high-quality fabric, pleasant to the touch.",
-    details: "Available in different colors",
-    status: "In Stock",
-    sku: "#SKU90480",
-    images: [
-      "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=500&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=500&h=600&fit=crop"
-    ],
-    colors: ['S', 'M', 'L', 'XL'],
-    sizes: ['S', 'M', 'L', 'XL']
+  // Fetch product data from API
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        // Get product ID from URL parameters
+        const productId = id;
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/${productId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          setProduct(data.data.product);
+          // Set first variant as default
+          if (data.data.product.variants && data.data.product.variants.length > 0) {
+            setSelectedVariant(data.data.product.variants[0]);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching product:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div>
+        <ProductHeader />
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
+          <div className="flex justify-center items-center h-64">
+            <div className="text-gray-500">Loading...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div>
+        <ProductHeader />
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
+          <div className="flex justify-center items-center h-64">
+            <div className="text-gray-500">Product not found</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Get unique sizes and colors from variants
+  const availableSizes = [...new Set(product.variants.map(v => v.size))];
+  const availableColors = product.variants.reduce((acc, variant) => {
+    if (!acc.find(c => c.name === variant.color.name)) {
+      acc.push(variant.color);
+    }
+    return acc;
+  }, []);
+
+  // Handle variant selection
+  const handleSizeChange = (size) => {
+    const newVariant = product.variants.find(v => 
+      v.size === size && v.color.name === selectedVariant?.color.name
+    ) || product.variants.find(v => v.size === size);
+    
+    if (newVariant) {
+      setSelectedVariant(newVariant);
+    }
+  };
+
+  const handleColorChange = (colorName) => {
+    const newVariant = product.variants.find(v => 
+      v.color.name === colorName && v.size === selectedVariant?.size
+    ) || product.variants.find(v => v.color.name === colorName);
+    
+    if (newVariant) {
+      setSelectedVariant(newVariant);
+    }
   };
 
   const handleQuantityChange = (change) => {
     setQuantity(Math.max(1, quantity + change));
+  };
+
+  const handleAddToCart = () => {
+    if (!selectedVariant) {
+      alert('Please select a variant');
+      return;
+    }
+    
+    if (selectedVariant.stockQuantity <= 0) {
+      alert('This product is out of stock');
+      return;
+    }
+    
+    const cartItem = {
+      productId: product._id,
+      variantId: selectedVariant._id,
+      name: product.name,
+      price: selectedVariant.price.sale || selectedVariant.price.regular,
+      size: selectedVariant.size,
+      color: selectedVariant.color,
+      quantity: quantity,
+      image: product.images[0]?.url
+    };
+    
+    console.log('Adding to cart:', cartItem);
+    // Here you would typically dispatch to a cart context or make an API call
+    alert(`Added ${quantity} x ${product.name} (${selectedVariant.size}, ${selectedVariant.color.name}) to cart!`);
   };
 
   const renderStars = (rating, interactive = false, onStarClick = null) => {
@@ -58,13 +157,15 @@ const ProductDetail = () => {
         <div className="space-y-4">
           <div className="relative">
             <img
-              src={product.images[0]}
-              alt={product.name}
+              src={product.images[selectedImage]?.url || product.images[0]?.url}
+              alt={product.images[selectedImage]?.alt || product.name}
               className="w-full h-96 object-cover rounded-lg"
             />
-            <span className="absolute top-4 left-4 bg-red-500 text-white text-xs px-2 py-1 rounded">
-              SALE
-            </span>
+            {selectedVariant?.price?.sale < selectedVariant?.price?.regular && (
+              <span className="absolute top-4 left-4 bg-red-500 text-white text-xs px-2 py-1 rounded">
+                SALE
+              </span>
+            )}
             <button className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100">
               <Heart className="w-5 h-5" />
             </button>
@@ -72,10 +173,13 @@ const ProductDetail = () => {
           <div className="flex space-x-2">
             {product.images.map((image, index) => (
               <img
-                key={index}
-                src={image}
-                alt={`${product.name} ${index + 1}`}
-                className="w-20 h-20 object-cover rounded cursor-pointer border-2 border-transparent hover:border-gray-300"
+                key={image._id}
+                src={image.url}
+                alt={image.alt}
+                onClick={() => setSelectedImage(index)}
+                className={`w-20 h-20 object-cover rounded cursor-pointer border-2 ${
+                  selectedImage === index ? 'border-gray-600' : 'border-transparent hover:border-gray-300'
+                }`}
               />
             ))}
           </div>
@@ -94,9 +198,9 @@ const ProductDetail = () => {
             </h1>
             <div className="flex items-center space-x-2 mb-4">
               <div className="flex items-center">
-                {renderStars(product.rating)}
+                {renderStars(product.averageRating || 4)}
               </div>
-              <span className="text-sm text-gray-500">({product.reviewCount})</span>
+              <span className="text-sm text-gray-500">({product.reviewCount || 23})</span>
             </div>
           </div>
 
@@ -108,35 +212,43 @@ const ProductDetail = () => {
               background: 'rgb(255, 255, 255)'
             }}
           >
-            {product.description}
+            {product.shortDescription || product.description}
           </p>
 
           <div className="space-y-2">
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Status:</span>
-              <span className="text-sm font-medium text-green-600">{product.status}</span>
+              <span className="text-sm font-medium text-green-600">
+                {selectedVariant?.stockQuantity > 0 ? 'In Stock' : 'Out of Stock'}
+              </span>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">SKU:</span>
-              <span className="text-sm text-gray-800">{product.sku}</span>
+              <span className="text-sm text-gray-800">{selectedVariant?.sku || 'N/A'}</span>
             </div>
           </div>
 
           <div className="flex items-center space-x-4">
-            <span className="text-3xl font-bold text-gray-900">${product.price}</span>
-            <span className="text-lg text-gray-500 line-through">${product.originalPrice}</span>
+            <span className="text-3xl font-bold text-gray-900">
+              ${selectedVariant?.price?.sale ? selectedVariant.price.sale.toFixed(2) : selectedVariant?.price?.regular?.toFixed(2) || '0.00'}
+            </span>
+            {selectedVariant?.price?.sale && selectedVariant?.price?.regular && selectedVariant.price.sale < selectedVariant.price.regular && (
+              <span className="text-lg text-gray-500 line-through">
+                ${selectedVariant.price.regular.toFixed(2)}
+              </span>
+            )}
           </div>
 
           {/* Size Selection */}
           <div>
             <h3 className="text-sm font-medium text-gray-900 mb-3">Size</h3>
             <div className="flex space-x-2">
-              {product.sizes.map((size) => (
+              {availableSizes.map((size) => (
                 <button
                   key={size}
-                  onClick={() => setSelectedSize(size)}
+                  onClick={() => handleSizeChange(size)}
                   className={`w-10 h-10 rounded border text-sm font-medium ${
-                    selectedSize === size
+                    selectedVariant?.size === size
                       ? 'border-black bg-black text-white'
                       : 'border-gray-300 text-gray-700 hover:border-gray-400'
                   }`}
@@ -151,16 +263,15 @@ const ProductDetail = () => {
           <div>
             <h3 className="text-sm font-medium text-gray-900 mb-3">Color</h3>
             <div className="flex space-x-2">
-              {['black', 'gray', 'white'].map((color) => (
+              {availableColors.map((color) => (
                 <button
-                  key={color}
-                  onClick={() => setSelectedColor(color)}
-                  className={`w-8 h-8 rounded-full border-2 ${
-                    color === 'black' ? 'bg-black' :
-                    color === 'gray' ? 'bg-gray-400' : 'bg-white border-gray-300'
-                  } ${
-                    selectedColor === color ? 'ring-2 ring-offset-2 ring-gray-500' : ''
+                  key={color.name}
+                  onClick={() => handleColorChange(color.name)}
+                  style={{ backgroundColor: color.hex }}
+                  className={`w-8 h-8 rounded-full border-2 border-gray-300 ${
+                    selectedVariant?.color.name === color.name ? 'ring-2 ring-offset-2 ring-gray-500' : ''
                   }`}
+                  title={color.name}
                 />
               ))}
             </div>
@@ -183,7 +294,11 @@ const ProductDetail = () => {
                 <Plus className="w-4 h-4" />
               </button>
             </div>
-            <Button className="flex-1 bg-black text-white hover:bg-gray-800 py-3">
+            <Button 
+              className="flex-1 bg-black text-white hover:bg-gray-800 py-3"
+              onClick={handleAddToCart}
+              disabled={!selectedVariant || selectedVariant.stockQuantity <= 0}
+            >
               Add To Cart
             </Button>
           </div>
@@ -226,16 +341,33 @@ const ProductDetail = () => {
                 background: 'rgb(255, 255, 255)'
               }}
             >
-              {product.description} Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-              Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad 
-              minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea 
-              commodo consequat.
+              {product.description}
             </p>
+            
+            {product.material && (
+              <div className="mt-4">
+                <h4 className="font-medium text-gray-900 mb-2">Material</h4>
+                <p className="text-gray-600">{product.material}</p>
+              </div>
+            )}
+            
+            {product.tags && product.tags.length > 0 && (
+              <div className="mt-4">
+                <h4 className="font-medium text-gray-900 mb-2">Tags</h4>
+                <div className="flex flex-wrap gap-2">
+                  {product.tags.map((tag, index) => (
+                    <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'reviews' && (
-          <ProductReviews productId={product.id} />
+          <ProductReviews productId={product._id} />
         )}
       </div>
       </div>

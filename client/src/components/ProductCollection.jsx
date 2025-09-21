@@ -1,25 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Slider } from '../ui/Slider';
 import { Heart, Search, Star } from 'lucide-react';
 
 const ProductCollection = () => {
   const [priceRange, setPriceRange] = useState([0, 100]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
 
-  const products = [
-    { id: 1, name: "Polymod pullover with zip", price: 53.99, originalPrice: null, image: "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=300&h=300&fit=crop", sale: false },
-    { id: 2, name: "Sexy circle skirt", price: 59.99, originalPrice: null, image: "https://images.unsplash.com/photo-1583496661160-fb5886a13fe7?w=300&h=300&fit=crop", sale: true },
-    { id: 3, name: "Cotton T-shirt", price: 53.99, originalPrice: null, image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=300&fit=crop", sale: false },
-    { id: 4, name: "Cotton pullover with zip", price: 53.99, originalPrice: 65.99, image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=300&h=300&fit=crop", sale: true },
-    { id: 5, name: "Polymod pullover", price: 53.99, originalPrice: null, image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=300&h=300&fit=crop", sale: false },
-    { id: 6, name: "Sleeveless casual handbag", price: 79.99, originalPrice: 95.99, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&h=300&fit=crop", sale: true },
-    { id: 7, name: "Polo Shirt", price: 53.99, originalPrice: null, image: "https://images.unsplash.com/photo-1571945153237-4929e783af4a?w=300&h=300&fit=crop", sale: false },
-    { id: 8, name: "Blue shirt with three quarter", price: 53.99, originalPrice: null, image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=300&h=300&fit=crop", sale: false },
-    { id: 9, name: "Black T-shirt sport", price: 53.99, originalPrice: 65.99, image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=300&fit=crop", sale: true },
-    { id: 10, name: "Polo baseball cap black", price: 53.99, originalPrice: null, image: "https://images.unsplash.com/photo-1575428652377-a2d80e2277fc?w=300&h=300&fit=crop", sale: false },
-    { id: 11, name: "Travel handbag burgundy", price: 129.99, originalPrice: null, image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=300&h=300&fit=crop", sale: true },
-    { id: 12, name: "Black High Heels", price: 129.99, originalPrice: 155.99, image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=300&fit=crop", sale: true }
-  ];
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/categories`);
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+          setCategories(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        setCategories([]);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // Fetch products from API with category filter
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        
+        // Build URL with category filter if selected
+        let url = `${import.meta.env.VITE_API_BASE_URL}/api/products`;
+        if (selectedCategory) {
+          url += `?category=${selectedCategory}`;
+        }
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        // Handle API response structure
+        if (data.success && data.data && data.data.products) {
+          setProducts(data.data.products);
+        } else {
+          console.error('Unexpected API response structure:', data);
+          setProducts([]);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [selectedCategory]);
+
+  // Handle category selection
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategory(categoryId);
+  };
 
   return (
     <div className="container mx-auto px-4 max-w-6xl py-8">
@@ -44,17 +90,46 @@ const ProductCollection = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="flex items-center space-x-2 cursor-pointer">
-                  <input type="checkbox" className="rounded" />
+                  <input 
+                    type="radio" 
+                    name="category"
+                    value=""
+                    checked={selectedCategory === ''}
+                    onChange={(e) => handleCategoryChange(e.target.value)}
+                    className="rounded" 
+                  />
                   <span className="text-sm">All</span>
                 </label>
                 <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">HOT</span>
               </div>
-              {['Women', 'Men', 'Kids', 'New Arrivals'].map((category) => (
-                <label key={category} className="flex items-center space-x-2 cursor-pointer">
-                  <input type="checkbox" className="rounded" />
-                  <span className="text-sm">{category}</span>
+              {categories.length > 0 ? categories.map((category) => (
+                <label key={category._id} className="flex items-center space-x-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="category"
+                    value={category._id}
+                    checked={selectedCategory === category._id}
+                    onChange={(e) => handleCategoryChange(e.target.value)}
+                    className="rounded" 
+                  />
+                  <span className="text-sm">{category.name}</span>
                 </label>
-              ))}
+              )) : (
+                // Fallback static categories while loading
+                ['Women', 'Men', 'Kids', 'New Arrivals'].map((category) => (
+                  <label key={category} className="flex items-center space-x-2 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="category"
+                      value={category.toLowerCase()}
+                      checked={selectedCategory === category.toLowerCase()}
+                      onChange={(e) => handleCategoryChange(e.target.value)}
+                      className="rounded" 
+                    />
+                    <span className="text-sm">{category}</span>
+                  </label>
+                ))
+              )}
             </div>
           </div>
 
@@ -64,7 +139,7 @@ const ProductCollection = () => {
             <div className="space-y-4">
               <Slider
                 value={priceRange}
-                onValueChange={setPriceRange}
+                onChange={setPriceRange}
                 max={200}
                 step={1}
                 className="w-full"
@@ -197,47 +272,98 @@ const ProductCollection = () => {
 
           {/* Products Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => (
-              <div key={product.id} className="group cursor-pointer">
-                <div className="relative overflow-hidden bg-gray-50 mb-3">
-                  <img 
-                    src={product.image} 
-                    alt={product.name}
-                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  {product.sale && (
-                    <span className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
-                      SALE
-                    </span>
-                  )}
-                  <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100">
-                    <Heart className="w-4 h-4" />
-                  </button>
-                  
-                  {/* Quick view buttons */}
-                  <div className="absolute bottom-2 left-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <a href={`/product/${product.id}`}>
-                    <Button  size="sm" className="flex-1 bg-white text-black hover:bg-gray-100 rounded-none text-xs">
-                      Quick View
-                    </Button>
-                    </a>
-                    <Button size="sm" className="flex-1 bg-black text-white hover:bg-gray-800 rounded-none text-xs">
-                      Add to Cart
-                    </Button>
+            {loading ? (
+              // Loading skeleton
+              Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="group cursor-pointer animate-pulse">
+                  <div className="relative overflow-hidden bg-gray-200 mb-3 h-64"></div>
+                  <div className="text-center">
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
                   </div>
                 </div>
+              ))
+            ) : products && products.length > 0 ? (
+              products.map((product) => {
+                // Get first variant for pricing
+                const firstVariant = product.variants?.[0];
+                const regularPrice = firstVariant?.price?.regular;
+                const salePrice = firstVariant?.price?.sale;
+                const hasDiscount = salePrice && salePrice < regularPrice;
                 
-                <div className="text-center">
-                  <h3 className="font-medium text-sm mb-1 text-gray-800">{product.name}</h3>
-                  <div className="flex justify-center items-center space-x-2">
-                    <span className="font-semibold text-black">${product.price}</span>
-                    {product.originalPrice && (
-                      <span className="text-sm text-gray-500 line-through">${product.originalPrice}</span>
-                    )}
+                // Get main image
+                const mainImage = product.images?.find(img => img.isMain)?.url || 
+                                product.images?.[0]?.url || 
+                                'https://via.placeholder.com/300x300';
+                
+                return (
+                  <div key={product._id} className="group cursor-pointer">
+                    <div className="relative overflow-hidden bg-gray-50 mb-3">
+                      <img 
+                        src={mainImage} 
+                        alt={product.name}
+                        className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {hasDiscount && (
+                        <span className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
+                          SALE
+                        </span>
+                      )}
+                      {product.isFeatured && (
+                        <span className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                          FEATURED
+                        </span>
+                      )}
+                      <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100">
+                        <Heart className="w-4 h-4" />
+                      </button>
+                      
+                      {/* Quick view buttons */}
+                      <div className="absolute bottom-2 left-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <a href={`/product/${product._id}`}>
+                          <Button size="sm" className="flex-1 bg-white text-black hover:bg-gray-100 rounded-none text-xs">
+                            Quick View
+                          </Button>
+                        </a>
+                        <Button size="sm" className="flex-1 bg-black text-white hover:bg-gray-800 rounded-none text-xs">
+                          Add to Cart
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="text-center">
+                      <h3 className="font-medium text-sm mb-1 text-gray-800">{product.name}</h3>
+                      <div className="flex justify-center items-center space-x-2">
+                        {hasDiscount ? (
+                          <>
+                            <span className="font-semibold text-black">${(salePrice / 100).toFixed(2)}</span>
+                            <span className="text-sm text-gray-500 line-through">${(regularPrice / 100).toFixed(2)}</span>
+                          </>
+                        ) : (
+                          <span className="font-semibold text-black">${(regularPrice / 100).toFixed(2)}</span>
+                        )}
+                      </div>
+                      {product.averageRating && (
+                        <div className="flex justify-center items-center mt-1">
+                          <div className="flex items-center space-x-1">
+                            {[...Array(5)].map((_, i) => (
+                              <span key={i} className={`text-xs ${i < Math.floor(product.averageRating) ? 'text-yellow-400' : 'text-gray-300'}`}>
+                                ★
+                              </span>
+                            ))}
+                            <span className="text-xs text-gray-500 ml-1">({product.reviewCount})</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                );
+              })
+            ) : (
+              <div className="col-span-3 text-center py-8">
+                <p className="text-gray-500">No products found</p>
               </div>
-            ))}
+            )}
           </div>
 
           {/* Pagination */}
