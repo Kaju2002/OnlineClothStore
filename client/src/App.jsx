@@ -7,6 +7,7 @@ import Footer from "./components/Footer";
 import Login from "./pages/Login";
 import ShopPage from "./pages/Product";
 import ProductDetail from "./pages/ProductDetail";
+import CheckoutPage from "./pages/CheckoutPage";
 function App() {
   return (
     <div className="min-h-screen px-4 md:px-16 flex flex-col">
@@ -19,6 +20,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/product" element={<ShopPage />} />
           <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
         </Routes>
       </main>
       <Footer />
