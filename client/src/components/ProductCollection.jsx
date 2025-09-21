@@ -216,9 +216,11 @@ const ProductCollection = () => {
                   
                   {/* Quick view buttons */}
                   <div className="absolute bottom-2 left-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <Button size="sm" className="flex-1 bg-white text-black hover:bg-gray-100 rounded-none text-xs">
+                    <a href={`/product/${product.id}`}>
+                    <Button  size="sm" className="flex-1 bg-white text-black hover:bg-gray-100 rounded-none text-xs">
                       Quick View
                     </Button>
+                    </a>
                     <Button size="sm" className="flex-1 bg-black text-white hover:bg-gray-800 rounded-none text-xs">
                       Add to Cart
                     </Button>
