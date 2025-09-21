@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import ProductReviews from '../components/ProductReviews';
 import ProductHeader from '../components/ProductHeader';
 import ReviewedByYouSection from '../components/ReviewedByYouSection';
+import { toast } from 'react-toastify';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -106,21 +107,58 @@ const ProductDetail = () => {
     setQuantity(Math.max(1, quantity + change));
   };
 
+  // Function to check if the same variant is already in cart
+  const checkIfAlreadyInCart = async (productId, variantSku) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) return false;
+
+      const response = await fetch('https://trendbite-api.onrender.com/api/cart', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data.cart.items) {
+          // Check if any item in cart has the same product ID and variant SKU
+          return result.data.cart.items.some(item => 
+            item.product._id === productId && item.variant.sku === variantSku
+          );
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('Error checking cart:', error);
+      return false;
+    }
+  };
+
   const handleAddToCart = async () => {
     if (!selectedVariant) {
-      alert('Please select a variant');
+      toast.error('Please select a variant');
       return;
     }
     
     if (selectedVariant.stockQuantity <= 0) {
-      alert('This product is out of stock');
+      toast.error('This product is out of stock');
       return;
     }
     
     // Get the auth token from localStorage
     const token = localStorage.getItem('authToken');
     if (!token) {
-      alert('Please login to add items to cart');
+      toast.error('Please login to add items to cart');
+      return;
+    }
+
+    // Check if the same variant is already in cart
+    const alreadyInCart = await checkIfAlreadyInCart(product._id, selectedVariant.sku);
+    if (alreadyInCart) {
+      toast.warning(`${product.name} (${selectedVariant.size}, ${selectedVariant.color.name}) is already in your cart!`);
       return;
     }
     
@@ -150,13 +188,13 @@ const ProductDetail = () => {
       const result = await response.json();
       
       if (response.ok && result.success) {
-        alert(`Added ${quantity} x ${product.name} (${selectedVariant.size}, ${selectedVariant.color.name}) to cart!`);
+        toast.success(`Added ${quantity} x ${product.name} (${selectedVariant.size}, ${selectedVariant.color.name}) to cart!`);
       } else {
-        alert('Failed to add item to cart: ' + (result.message || 'Unknown error'));
+        toast.error('Failed to add item to cart: ' + (result.message || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
-      alert('Failed to add item to cart');
+      toast.error('Failed to add item to cart');
     }
   };
 
