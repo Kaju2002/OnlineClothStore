@@ -28,7 +28,7 @@ const ProductHeader = () => {
                 <img 
                   src="https://mollee-html-ten.vercel.app/assets/img/banner-shop.jpg"
                   alt="Fashion Model" 
-                  className="w-full max-w-[400px] h-[300px] object-cover"
+                  className="w-full max-w-[700px] h-[300px] object-cover"
                 />
               </div>
             </div>
