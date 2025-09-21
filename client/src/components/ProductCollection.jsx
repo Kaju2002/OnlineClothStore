@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Slider } from '../ui/Slider';
 import { Heart, Search, Star } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const ProductCollection = () => {
   const [priceRange, setPriceRange] = useState([0, 100]);
@@ -65,6 +66,101 @@ const ProductCollection = () => {
   // Handle category selection
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId);
+  };
+
+  // Function to check if the same variant is already in cart
+  const checkIfAlreadyInCart = async (productId, variantSku) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) return false;
+
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data.cart.items) {
+          // Check if any item in cart has the same product ID and variant SKU
+          return result.data.cart.items.some(item => 
+            item.product._id === productId && item.variant.sku === variantSku
+          );
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('Error checking cart:', error);
+      return false;
+    }
+  };
+
+  // Handle add to cart
+  const handleAddToCart = async (product) => {
+    // Check if user is authenticated
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      toast.error('Please login to add items to cart');
+      return;
+    }
+
+    // Get first available variant (since we don't have variant selection in collection view)
+    const firstVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
+    
+    if (!firstVariant) {
+      toast.error('No variants available for this product');
+      return;
+    }
+    
+    if (firstVariant.stockQuantity <= 0) {
+      toast.error('This product is out of stock');
+      return;
+    }
+
+    // Check if the same variant is already in cart
+    const alreadyInCart = await checkIfAlreadyInCart(product._id, firstVariant.sku);
+    if (alreadyInCart) {
+      toast.warning(`${product.name} is already in your cart!`);
+      return;
+    }
+    
+    const cartData = {
+      productId: product._id,
+      variant: {
+        sku: firstVariant.sku,
+        size: firstVariant.size,
+        color: {
+          name: firstVariant.color.name,
+          hex: firstVariant.color.hex
+        }
+      },
+      quantity: 1
+    };
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(cartData)
+      });
+
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        toast.success(`Added ${product.name} to cart!`);
+      } else {
+        toast.error('Failed to add item to cart: ' + (result.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add item to cart');
+    }
   };
 
   return (
@@ -325,7 +421,11 @@ const ProductCollection = () => {
                             Quick View
                           </Button>
                         </a>
-                        <Button size="sm" className="flex-1 bg-black text-white hover:bg-gray-800 rounded-none text-xs">
+                        <Button 
+                          size="sm" 
+                          className="flex-1 bg-black text-white hover:bg-gray-800 rounded-none text-xs"
+                          onClick={() => handleAddToCart(product)}
+                        >
                           Add to Cart
                         </Button>
                       </div>

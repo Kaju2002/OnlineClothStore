@@ -113,7 +113,7 @@ const ProductDetail = () => {
       const token = localStorage.getItem('authToken');
       if (!token) return false;
 
-      const response = await fetch('https://trendbite-api.onrender.com/api/cart', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
