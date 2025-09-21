@@ -58,7 +58,7 @@ const CheckoutPage = () => {
         return;
       }
 
-      const response = await fetch('https://trendbite-api.onrender.com/api/cart', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -101,7 +101,7 @@ const CheckoutPage = () => {
     
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`https://trendbite-api.onrender.com/api/cart/items/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart/items/${id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -138,7 +138,7 @@ const CheckoutPage = () => {
     
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`https://trendbite-api.onrender.com/api/cart/items/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart/items/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
