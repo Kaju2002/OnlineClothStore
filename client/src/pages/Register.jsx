@@ -1,7 +1,80 @@
-import React from "react"
+import React, { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Facebook, Twitter, Instagram } from 'lucide-react';
+import axios from 'axios';
 
 export default function RegisterForm() {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phone: '',
+    agreeToPrivacy: false
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+    if (error) setError(''); // Clear error when user starts typing
+    if (success) setSuccess(''); // Clear success message when user starts typing
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      // Basic validation
+      if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+        throw new Error('Please fill in all required fields');
+      }
+      
+      if (formData.password !== formData.confirmPassword) {
+        throw new Error('Passwords do not match');
+      }
+      
+      if (!formData.agreeToPrivacy) {
+        throw new Error('Please agree to the privacy policy');
+      }
+
+      // Prepare data for API (based on User schema)
+      const userData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone || undefined, // Optional field
+      };
+
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/users/register`, userData);
+
+      console.log('Registration successful:', response.data);
+      
+      setSuccess('Registration successful! Redirecting to login...');
+      
+      // Redirect to login page after successful registration
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+      
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError(err.response?.data?.message || err.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
    return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Layout */}
@@ -53,38 +126,65 @@ export default function RegisterForm() {
             </div>
 
             {/* Registration form */}
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                  {error}
+                </div>
+              )}
+              
+              {success && (
+                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm">
+                  {success}
+                </div>
+              )}
+              
               {/* Name fields - stacked on mobile */}
               <div className="space-y-6">
                 <div>
                   <input
                     type="text"
-                    placeholder="Enter your name"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    placeholder="Enter your first name"
                     className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-sm"
+                    required
                   />
                 </div>
                 <div>
                   <input
                     type="text"
-                    placeholder="Enter last name"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    placeholder="Enter your last name"
                     className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-sm"
+                    required
                   />
                 </div>
               </div>
 
-              {/* Username and Email - stacked on mobile */}
+              {/* Email and Phone - stacked on mobile */}
               <div className="space-y-6">
                 <div>
                   <input
-                    type="text"
-                    placeholder="Enter your username"
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="Enter your email"
                     className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-sm"
+                    required
                   />
                 </div>
                 <div>
                   <input
-                    type="email"
-                    placeholder="Enter your email"
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="Enter your phone (optional)"
                     className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-sm"
                   />
                 </div>
@@ -95,15 +195,23 @@ export default function RegisterForm() {
                 <div>
                   <input
                     type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
                     placeholder="Enter password"
                     className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-sm"
+                    required
                   />
                 </div>
                 <div>
                   <input
                     type="password"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
                     placeholder="Confirm password"
                     className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-sm"
+                    required
                   />
                 </div>
               </div>
@@ -112,7 +220,11 @@ export default function RegisterForm() {
                 <label className="flex items-start mb-4">
                   <input 
                     type="checkbox" 
-                    className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black mt-1" 
+                    name="agreeToPrivacy"
+                    checked={formData.agreeToPrivacy}
+                    onChange={handleInputChange}
+                    className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black mt-1"
+                    required
                   />
                   <span className="ml-3 text-gray-700 text-sm leading-relaxed">
                     I agree with the <a href="#" className="text-orange-400 hover:text-orange-500">Privacy policy</a>
@@ -121,7 +233,7 @@ export default function RegisterForm() {
 
                 <div className="text-sm text-gray-600 mb-6">
                   Already have an account? Then{' '}
-                  <a href="#" className="text-orange-400 hover:text-orange-500">
+                  <a href="/login" className="text-orange-400 hover:text-orange-500">
                     log in
                   </a>
                 </div>
@@ -129,9 +241,10 @@ export default function RegisterForm() {
 
               <button
                 type="submit"
-                className="w-full bg-black text-white py-3 hover:bg-gray-800 transition-colors text-sm font-medium rounded"
+                disabled={loading}
+                className="w-full bg-black text-white py-3 hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium rounded"
               >
-                Check In
+                {loading ? 'Creating Account...' : 'Register'}
               </button>
             </form>
           </div>
@@ -213,36 +326,63 @@ export default function RegisterForm() {
               </div>
 
               {/* Registration form */}
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                    {error}
+                  </div>
+                )}
+                
+                {success && (
+                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm">
+                    {success}
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <input
                       type="text"
-                      placeholder="Enter your name"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      placeholder="Enter your first name"
                       className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
+                      required
                     />
                   </div>
                   <div>
                     <input
                       type="text"
-                      placeholder="Enter last name"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      placeholder="Enter your last name"
                       className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
+                      required
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="Enter your username"
-                      className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
-                    />
-                  </div>
                   <div>
                     <input
                       type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
                       placeholder="Enter your email"
+                      className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="Enter your phone (optional)"
                       className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
                     />
                   </div>
@@ -252,15 +392,23 @@ export default function RegisterForm() {
                   <div>
                     <input
                       type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
                       placeholder="Enter password"
                       className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
+                      required
                     />
                   </div>
                   <div>
                     <input
                       type="password"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
                       placeholder="Confirm password"
                       className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
+                      required
                     />
                   </div>
                 </div>
@@ -269,7 +417,11 @@ export default function RegisterForm() {
                   <label className="flex items-start mb-4">
                     <input 
                       type="checkbox" 
-                      className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black mt-1" 
+                      name="agreeToPrivacy"
+                      checked={formData.agreeToPrivacy}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black mt-1"
+                      required
                     />
                     <span className="ml-3 text-gray-700 text-sm leading-relaxed">
                       I agree with the <a href="#" className="text-orange-400 hover:text-orange-500">Privacy policy</a>
@@ -278,7 +430,7 @@ export default function RegisterForm() {
 
                   <div className="text-sm text-gray-600 mb-6">
                     Already have an account? Then{' '}
-                    <a href="#" className="text-orange-400 hover:text-orange-500">
+                    <a href="/login" className="text-orange-400 hover:text-orange-500">
                       log in
                     </a>
                   </div>
@@ -286,9 +438,10 @@ export default function RegisterForm() {
 
                 <button
                   type="submit"
-                  className="bg-black text-white py-3 px-8 hover:bg-gray-800 transition-colors text-base font-medium rounded"
+                  disabled={loading}
+                  className="bg-black text-white py-3 px-8 hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-base font-medium rounded"
                 >
-                  Check In
+                  {loading ? 'Creating Account...' : 'Register'}
                 </button>
               </form>
             </div>

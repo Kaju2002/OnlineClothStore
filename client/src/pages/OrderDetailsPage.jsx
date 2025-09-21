@@ -1,21 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../ui/button";
 import ProductHeader from "../components/ProductHeader";
 
 const OrderDetailsPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   
+  // Get data from checkout flow
+  const checkoutData = location.state;
+  
+  // Redirect to checkout if no data
+  useEffect(() => {
+    if (!checkoutData) {
+      navigate("/checkout");
+    }
+  }, [checkoutData, navigate]);
+
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    phone: "",
-    email: "",
+    firstName: checkoutData?.paymentInfo?.firstName || "",
+    lastName: checkoutData?.paymentInfo?.lastName || "",
+    phone: checkoutData?.paymentInfo?.phone || "",
+    email: checkoutData?.paymentInfo?.email || "",
     agreeToPolicy: false,
-    country: "",
-    city: "",
-    address: "",
+    country: "United States",
+    city: checkoutData?.paymentInfo?.city || "",
+    address: checkoutData?.paymentInfo?.address || "",
     deliveryDay: "",
     deliveryTime: "",
     comment: "",
@@ -25,25 +36,10 @@ const OrderDetailsPage = () => {
 
   const [currentStep, setCurrentStep] = useState(1);
 
-  const cartItems = [
-    {
-      id: 1,
-      name: "Fashionee - cotton shirt (S) x1",
-      price: 35.99,
-      originalPrice: 52.00,
-      image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=80&h=80&fit=crop"
-    },
-    {
-      id: 2,
-      name: "Spray wrap skirt x1",
-      price: 110.99,
-      image: "https://images.unsplash.com/photo-1583496661160-fb5886a13fe7?w=80&h=80&fit=crop"
-    }
-  ];
-
-  const orderPrice = 146.98;
-  const delivery = 16;
-  const total = 162.98;
+  const cartItems = checkoutData?.cartItems || [];
+  const orderPrice = checkoutData?.subtotal || 0;
+  const delivery = checkoutData?.delivery || 16;
+  const total = checkoutData?.total || (orderPrice + delivery);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -56,7 +52,16 @@ const OrderDetailsPage = () => {
   const handleContinue = () => {
     // Handle form submission and navigate to order confirmation
     console.log('Form data:', formData);
-    navigate("/order-confirmation");
+    navigate("/order-confirmation", {
+      state: {
+        orderData: {
+          ...checkoutData,
+          deliveryInfo: formData,
+          orderNumber: `ORD-${Date.now()}`,
+          orderDate: new Date().toISOString(),
+        }
+      }
+    });
   };
 
   const handleReturn = () => {
