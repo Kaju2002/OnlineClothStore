@@ -8,7 +8,6 @@ import Login from "./pages/Login";
 import ShopPage from "./pages/Product";
 import ProductDetail from "./pages/ProductDetail";
 import CheckoutPage from "./pages/CheckoutPage";
-import OrderDetailsPage from "./pages/OrderDetailsPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import ProfilePage from "./pages/ProfilePage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -26,7 +25,6 @@ function App() {
           <Route path="/product" element={<ShopPage />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/order-details" element={<OrderDetailsPage />} />
           <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />

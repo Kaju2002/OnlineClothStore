@@ -1,7 +1,62 @@
-import React from "react"
+import React, { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Facebook, Twitter, Instagram } from 'lucide-react';
+import axios from 'axios';
 
 export default function Login() {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    if (error) setError(''); 
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/users/login`, {
+        email: formData.email,
+        password: formData.password
+      });
+
+      console.log('Login successful:', response.data);
+      
+      // Store token if provided (token is in response.data.data.token)
+      if (response.data.data && response.data.data.token) {
+        localStorage.setItem('authToken', response.data.data.token);
+      }
+      
+      // Store user data if provided (user is in response.data.data.user)
+      if (response.data.data && response.data.data.user) {
+        localStorage.setItem('userData', JSON.stringify(response.data.data.user));
+      }
+
+      // Trigger a custom event to update navbar immediately
+      window.dispatchEvent(new Event('authStateChanged'));
+
+      // Redirect to home page
+      navigate('/');
+      
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Layout */}
@@ -53,20 +108,34 @@ export default function Login() {
             </div>
 
             {/* Login form */}
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                  {error}
+                </div>
+              )}
+              
               <div>
                 <input
                   type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
                   placeholder="Enter your email"
                   className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-sm"
+                  required
                 />
               </div>
 
               <div>
                 <input
                   type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
                   placeholder="Enter your password"
                   className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-sm"
+                  required
                 />
               </div>
 
@@ -88,9 +157,10 @@ export default function Login() {
 
               <button
                 type="submit"
-                className="w-full bg-black text-white py-3 hover:bg-gray-800 transition-colors text-sm font-medium rounded mt-6"
+                disabled={loading}
+                className="w-full bg-black text-white py-3 hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium rounded mt-6"
               >
-                Log In
+                {loading ? 'Logging in...' : 'Log In'}
               </button>
             </form>
           </div>
@@ -172,20 +242,34 @@ export default function Login() {
               </div>
 
               {/* Login form */}
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                    {error}
+                  </div>
+                )}
+                
                 <div>
                   <input
                     type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
                     placeholder="Enter your email"
                     className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
+                    required
                   />
                 </div>
 
                 <div>
                   <input
                     type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
                     placeholder="Enter your password"
                     className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
+                    required
                   />
                 </div>
 
@@ -207,9 +291,10 @@ export default function Login() {
 
                 <button
                   type="submit"
-                  className="bg-black text-white py-3 px-8 hover:bg-gray-800 transition-colors text-base font-medium rounded mt-6"
+                  disabled={loading}
+                  className="bg-black text-white py-3 px-8 hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-base font-medium rounded mt-6"
                 >
-                  Log In
+                  {loading ? 'Logging in...' : 'Log In'}
                 </button>
               </form>
             </div>

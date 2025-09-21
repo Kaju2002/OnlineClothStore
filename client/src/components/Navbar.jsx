@@ -1,5 +1,6 @@
 // Navbar.jsx
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   User,
@@ -8,13 +9,76 @@ import {
   X,
   ChevronDown,
   Heart,
+  LogOut,
+  UserCircle,
 } from "lucide-react";
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userData, setUserData] = useState(null);
   const userDropdownRef = useRef(null);
+
+  // Check authentication status on component mount
+  useEffect(() => {
+    const checkAuthStatus = () => {
+      const token = localStorage.getItem('authToken');
+      const user = localStorage.getItem('userData');
+      
+      console.log('Checking auth status:', { token: !!token, user: !!user }); // Debug log
+      
+      if (token) {
+        setIsAuthenticated(true);
+        if (user) {
+          try {
+            const parsedUser = JSON.parse(user);
+            console.log('Parsed user data:', parsedUser); // Debug log
+            setUserData(parsedUser);
+          } catch (error) {
+            console.error('Error parsing user data:', error);
+            setUserData(null);
+          }
+        }
+      } else {
+        setIsAuthenticated(false);
+        setUserData(null);
+      }
+    };
+
+    checkAuthStatus();
+    
+    // Listen for storage changes (when user logs in/out in another tab or same tab)
+    const handleStorageChange = () => {
+      console.log('Storage changed, rechecking auth...'); // Debug log
+      checkAuthStatus();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for a custom event we can trigger manually
+    window.addEventListener('authStateChanged', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('authStateChanged', handleStorageChange);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
+    setIsAuthenticated(false);
+    setUserData(null);
+    setIsUserDropdownOpen(false);
+    
+    // Trigger auth state change event
+    window.dispatchEvent(new Event('authStateChanged'));
+    
+    navigate('/');
+  };
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -143,39 +207,72 @@ const Navbar = () => {
               {/* User Dropdown Menu */}
               {isUserDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50">
-                  <a
-                    href="/login"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200"
-                    onClick={() => setIsUserDropdownOpen(false)}
-                  >
-                    Login
-                  </a>
-                  <a
-                    href="/register"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200"
-                    onClick={() => setIsUserDropdownOpen(false)}
-                  >
-                    Sign Up
-                  </a>
-                  <hr className="my-2 border-gray-100" />
-                  <a
-                    href="#"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200"
-                    onClick={() => setIsUserDropdownOpen(false)}
-                  >
-                    Logout
-                  </a>
+                  {isAuthenticated ? (
+                    // Authenticated user menu
+                    <>
+                      {userData && (
+                        <div className="px-4 py-2 border-b border-gray-100">
+                          <p className="text-sm font-medium text-gray-900">
+                            {userData.firstName} {userData.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500">{userData.email}</p>
+                        </div>
+                      )}
+                      <a
+                        href="/profile"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200"
+                        onClick={() => setIsUserDropdownOpen(false)}
+                      >
+                        <UserCircle size={16} className="mr-2" />
+                        Profile
+                      </a>
+                      <a
+                        href="/favourites"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200"
+                        onClick={() => setIsUserDropdownOpen(false)}
+                      >
+                        <Heart size={16} className="mr-2" />
+                        Favourites
+                      </a>
+                      <hr className="my-2 border-gray-100" />
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200"
+                      >
+                        <LogOut size={16} className="mr-2" />
+                        Logout
+                      </button>
+                    </>
+                  ) : (
+                    // Non-authenticated user menu
+                    <>
+                      <a
+                        href="/login"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200"
+                        onClick={() => setIsUserDropdownOpen(false)}
+                      >
+                        Login
+                      </a>
+                      <a
+                        href="/register"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200"
+                        onClick={() => setIsUserDropdownOpen(false)}
+                      >
+                        Sign Up
+                      </a>
+                    </>
+                  )}
                 </div>
               )}
             </div>
 
             {/* Shopping Cart Button */}
-            <button className="relative p-2 rounded-full text-gray-700 hover:text-black hover:bg-gray-50 transition-all duration-200 transform hover:scale-110 group">
+            <a href="/checkout" className="relative p-2 rounded-full text-gray-700 hover:text-black hover:bg-gray-50 transition-all duration-200 transform hover:scale-110 group">
               <ShoppingBag size={20} strokeWidth={1.5} />
               <span className="absolute -top-1 -right-1 bg-black text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium transition-all duration-200 group-hover:scale-110">
                 0
               </span>
-            </button>
+            </a>
           </div>
         </div>
       </div>
@@ -286,14 +383,63 @@ const Navbar = () => {
 
           {/* Mobile Action Buttons */}
           <div className="pt-4 border-t border-gray-100">
-            <div className="flex justify-center space-x-6">
-              <button className="p-3 rounded-full bg-gray-50 text-gray-700 hover:text-black hover:bg-gray-100 transition-all duration-200">
-                <Heart size={20} strokeWidth={1.5} />
-              </button>
-              <button className="p-3 rounded-full bg-gray-50 text-gray-700 hover:text-black hover:bg-gray-100 transition-all duration-200">
-                <User size={20} strokeWidth={1.5} />
-              </button>
-            </div>
+            {isAuthenticated ? (
+              // Authenticated mobile menu
+              <div className="space-y-3">
+                {userData && (
+                  <div className="text-center pb-2">
+                    <p className="text-sm font-medium text-gray-900">
+                      {userData.firstName} {userData.lastName}
+                    </p>
+                    <p className="text-xs text-gray-500">{userData.email}</p>
+                  </div>
+                )}
+                <a
+                  href="/profile"
+                  className="flex items-center justify-center px-4 py-2 text-gray-700 hover:text-black transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <UserCircle size={18} className="mr-2" />
+                  Profile
+                </a>
+                <a
+                  href="/favourites"
+                  className="flex items-center justify-center px-4 py-2 text-gray-700 hover:text-black transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Heart size={18} className="mr-2" />
+                  Favourites
+                </a>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsMenuOpen(false);
+                  }}
+                  className="flex items-center justify-center w-full px-4 py-2 text-gray-700 hover:text-black transition-colors duration-200"
+                >
+                  <LogOut size={18} className="mr-2" />
+                  Logout
+                </button>
+              </div>
+            ) : (
+              // Non-authenticated mobile menu
+              <div className="space-y-3">
+                <a
+                  href="/login"
+                  className="block text-center py-2 px-4 bg-black text-white rounded-md hover:bg-gray-800 transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Login
+                </a>
+                <a
+                  href="/register"
+                  className="block text-center py-2 px-4 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign Up
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </div>

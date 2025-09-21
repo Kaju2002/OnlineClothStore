@@ -1,11 +1,14 @@
 import React, { useState } from "react";
-import { Trash2, Plus, Minus } from "lucide-react";
+import { Trash2, Plus, Minus, CreditCard, Lock, ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import ProductHeader from "../components/ProductHeader";
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
+  
+  // Multi-step checkout state
+  const [currentStep, setCurrentStep] = useState(1); // 1: Cart, 2: Payment Info, 3: Review
   
   const [cartItems, setCartItems] = useState([
     {
@@ -29,6 +32,24 @@ const CheckoutPage = () => {
   ]);
 
   const [promoCode, setPromoCode] = useState("");
+  
+  // Payment and shipping information state
+  const [paymentInfo, setPaymentInfo] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    cardNumber: "",
+    expiryDate: "",
+    cvv: "",
+    cardName: "",
+  });
+  
+  const [errors, setErrors] = useState({});
 
   const updateQuantity = (id, change) => {
     setCartItems((items) =>
@@ -57,178 +78,493 @@ const CheckoutPage = () => {
     console.log("Promo code:", promoCode);
   };
 
-  const handleCheckout = () => {
-    // Navigate to order details page
-    navigate("/order-details");
+  const handlePaymentInfoChange = (e) => {
+    const { name, value } = e.target;
+    setPaymentInfo(prev => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const validateStep = () => {
+    const newErrors = {};
+    
+    if (currentStep === 2) {
+      // Validate contact and shipping info only (no payment info needed for COD)
+      const requiredFields = ['firstName', 'lastName', 'email', 'address', 'city', 'state', 'zipCode'];
+      
+      requiredFields.forEach(field => {
+        if (!paymentInfo[field].trim()) {
+          newErrors[field] = "This field is required";
+        }
+      });
+      
+      // Email validation
+      if (paymentInfo.email && !/\S+@\S+\.\S+/.test(paymentInfo.email)) {
+        newErrors.email = "Please enter a valid email address";
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const nextStep = () => {
+    if (currentStep === 1) {
+      // Check if cart has items
+      if (cartItems.length === 0) {
+        alert("Your cart is empty!");
+        return;
+      }
+      setCurrentStep(2);
+    } else if (currentStep === 2) {
+      // Validate payment info before proceeding
+      if (validateStep()) {
+        setCurrentStep(3);
+      }
+    } else if (currentStep === 3) {
+      // Final checkout - navigate to order confirmation
+      navigate("/order-confirmation", {
+        state: {
+          cartItems,
+          paymentInfo,
+          subtotal,
+          delivery,
+          total,
+          promoCode
+        }
+      });
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const continueShopping = () => {
+    navigate("/product");
   };
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Cart Header */}
+      {/* Header */}
       <ProductHeader 
-        title="Cart"
-        breadcrumbText="Cart"
+        title={currentStep === 1 ? "Shopping Cart" : currentStep === 2 ? "Shipping & COD" : "Review Order"}
+        breadcrumbText={currentStep === 1 ? "Cart" : currentStep === 2 ? "Cart / Shipping" : "Cart / Shipping / Review"}
         bannerImage="https://mollee-html-ten.vercel.app/assets/img/banner-cart.jpg"
-        altText="Cart Banner"
+        altText="Checkout Banner"
       />
       
       <div className="container mx-auto px-4 py-8 max-w-6xl mt-8">
+        {/* Progress Steps */}
+        <div className="flex items-center justify-center mb-8">
+          <div className="flex items-center space-x-4">
+            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${currentStep >= 1 ? 'bg-black text-white' : 'bg-gray-200 text-gray-600'}`}>
+              1
+            </div>
+            <div className={`w-16 h-0.5 ${currentStep >= 2 ? 'bg-black' : 'bg-gray-200'}`}></div>
+            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${currentStep >= 2 ? 'bg-black text-white' : 'bg-gray-200 text-gray-600'}`}>
+              2
+            </div>
+            <div className={`w-16 h-0.5 ${currentStep >= 3 ? 'bg-black' : 'bg-gray-200'}`}></div>
+            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${currentStep >= 3 ? 'bg-black text-white' : 'bg-gray-200 text-gray-600'}`}>
+              3
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-center mb-6">
+          <div className="flex space-x-8 text-sm">
+            <span className={currentStep === 1 ? 'font-semibold' : 'text-gray-500'}>Cart</span>
+            <span className={currentStep === 2 ? 'font-semibold' : 'text-gray-500'}>Shipping & COD</span>
+            <span className={currentStep === 3 ? 'font-semibold' : 'text-gray-500'}>Review Order</span>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Cart Items - Left Side */}
-          <div className="lg:col-span-8 space-y-6">
-            {/* Cart Items List */}
-            <div className="space-y-6">
-              {cartItems.map((item, index) => (
-                <div key={item.id}>
-                  <div className="flex items-center space-x-6 py-6">
-                    {/* Product Image */}
-                    <div className="flex-shrink-0">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-24 h-24 object-cover rounded"
-                      />
-                    </div>
+          {/* Main Content - Left Side */}
+          <div className="lg:col-span-8">
+            
+            {/* Step 1: Cart Items */}
+            {currentStep === 1 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-semibold mb-6">Shopping Cart</h2>
+                
+                {cartItems.length === 0 ? (
+                  <div className="text-center py-12">
+                    <h3 className="text-xl font-semibold mb-4">Your cart is empty</h3>
+                    <p className="text-gray-600 mb-6">Looks like you haven't added any items to your cart yet.</p>
+                    <Button onClick={continueShopping} className="bg-black text-white hover:bg-gray-800">
+                      Continue Shopping
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Cart Items List */}
+                    <div className="space-y-6">
+                      {cartItems.map((item, index) => (
+                        <div key={item.id}>
+                          <div className="flex items-center space-x-6 py-6">
+                            {/* Product Image */}
+                            <div className="flex-shrink-0">
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="w-24 h-24 object-cover rounded"
+                              />
+                            </div>
 
-                    {/* Product Details */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start mb-4">
-                        <h3
-                          className="font-medium"
-                          style={{
-                            color: "rgb(0, 0, 0)",
-                            font: "18px / 24px Raleway, sans-serif",
-                          }}
-                        >
-                          {item.name}
-                        </h3>
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="p-1 text-gray-400 hover:text-red-500 ml-4"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
+                            {/* Product Details */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-start mb-4">
+                                <h3 className="font-medium text-lg">{item.name}</h3>
+                                <button
+                                  onClick={() => removeItem(item.id)}
+                                  className="p-1 text-gray-400 hover:text-red-500 ml-4"
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </button>
+                              </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          {item.originalPrice && (
-                            <span
-                              className="line-through"
-                              style={{
-                                color: "rgb(153, 153, 153)",
-                                font: "16px / 24px Raleway, sans-serif",
-                              }}
-                            >
-                              ${item.originalPrice}
-                            </span>
-                          )}
-                          <span
-                            className="font-semibold"
-                            style={{
-                              color: "rgb(0, 0, 0)",
-                              font: "18px / 24px Raleway, sans-serif",
-                            }}
-                          >
-                            ${item.price}
-                          </span>
-                        </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                  {item.originalPrice && (
+                                    <span className="line-through text-gray-500">
+                                      ${item.originalPrice}
+                                    </span>
+                                  )}
+                                  <span className="font-semibold text-lg">
+                                    ${item.price}
+                                  </span>
+                                </div>
 
-                        {/* Quantity Controls and Total */}
-                        <div className="flex items-center space-x-8">
-                          <div className="flex items-center space-x-3">
-                            <button
-                              onClick={() => updateQuantity(item.id, -1)}
-                              className="w-8 h-8 flex items-center justify-center border border-gray-300 hover:bg-gray-100 rounded"
-                            >
-                              <Minus className="w-4 h-4" />
-                            </button>
-                            <span
-                              className="w-8 text-center"
-                              style={{
-                                font: "16px / 24px Raleway, sans-serif",
-                              }}
-                            >
-                              {item.quantity}
-                            </span>
-                            <button
-                              onClick={() => updateQuantity(item.id, 1)}
-                              className="w-8 h-8 flex items-center justify-center border border-gray-300 hover:bg-gray-100 rounded"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
+                                {/* Quantity Controls and Total */}
+                                <div className="flex items-center space-x-8">
+                                  <div className="flex items-center space-x-3">
+                                    <button
+                                      onClick={() => updateQuantity(item.id, -1)}
+                                      className="w-8 h-8 flex items-center justify-center border border-gray-300 hover:bg-gray-100 rounded"
+                                    >
+                                      <Minus className="w-4 h-4" />
+                                    </button>
+                                    <span className="w-8 text-center font-medium">
+                                      {item.quantity}
+                                    </span>
+                                    <button
+                                      onClick={() => updateQuantity(item.id, 1)}
+                                      className="w-8 h-8 flex items-center justify-center border border-gray-300 hover:bg-gray-100 rounded"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                    </button>
+                                  </div>
+
+                                  <span className="font-semibold min-w-[80px] text-right text-lg">
+                                    ${(item.price * item.quantity).toFixed(2)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
 
-                          <span
-                            className="font-semibold min-w-[80px] text-right"
-                            style={{
-                              color: "rgb(0, 0, 0)",
-                              font: "18px / 24px Raleway, sans-serif",
-                            }}
-                          >
-                            ${(item.price * item.quantity).toFixed(2)}
-                          </span>
+                          {/* Divider Line */}
+                          {index < cartItems.length - 1 && (
+                            <hr className="border-gray-300" />
+                          )}
                         </div>
+                      ))}
+                    </div>
+
+                    {/* Promo Code Section */}
+                    <div className="py-6 border-t">
+                      <h3 className="text-xl font-semibold mb-4">Promo Code</h3>
+                      <p className="text-gray-600 mb-6">
+                        Enter your promo code to get discount on your order.
+                      </p>
+
+                      <form onSubmit={handlePromoSubmit} className="flex space-x-0">
+                        <input
+                          type="text"
+                          value={promoCode}
+                          onChange={(e) => setPromoCode(e.target.value)}
+                          placeholder="Enter promo code"
+                          className="flex-1 px-4 py-3 border border-gray-300 border-r-0 focus:outline-none focus:border-black bg-gray-50"
+                        />
+                        <Button
+                          type="submit"
+                          className="bg-black text-white hover:bg-gray-800 px-6 py-3 border border-black"
+                        >
+                          Apply
+                        </Button>
+                      </form>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Step 2: Shipping Information & Cash on Delivery */}
+            {currentStep === 2 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-semibold mb-6">Shipping Information & Cash on Delivery</h2>
+                
+                {/* Contact Information */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-xl font-semibold mb-6">Contact Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        First Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={paymentInfo.firstName}
+                        onChange={handlePaymentInfoChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
+                          errors.firstName ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+                      {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Last Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={paymentInfo.lastName}
+                        onChange={handlePaymentInfoChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
+                          errors.lastName ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+                      {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={paymentInfo.email}
+                        onChange={handlePaymentInfoChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
+                          errors.email ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+                      {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={paymentInfo.phone}
+                        onChange={handlePaymentInfoChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Shipping Address */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-xl font-semibold mb-6">Shipping Address</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Address *
+                      </label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={paymentInfo.address}
+                        onChange={handlePaymentInfoChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
+                          errors.address ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+                      {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          City *
+                        </label>
+                        <input
+                          type="text"
+                          name="city"
+                          value={paymentInfo.city}
+                          onChange={handlePaymentInfoChange}
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
+                            errors.city ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        />
+                        {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          State *
+                        </label>
+                        <input
+                          type="text"
+                          name="state"
+                          value={paymentInfo.state}
+                          onChange={handlePaymentInfoChange}
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
+                            errors.state ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        />
+                        {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          ZIP Code *
+                        </label>
+                        <input
+                          type="text"
+                          name="zipCode"
+                          value={paymentInfo.zipCode}
+                          onChange={handlePaymentInfoChange}
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
+                            errors.zipCode ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        />
+                        {errors.zipCode && <p className="text-red-500 text-sm mt-1">{errors.zipCode}</p>}
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Divider Line */}
-                  {index < cartItems.length - 1 && (
-                    <hr className="border-gray-300" />
+                {/* Payment Method */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-xl font-semibold mb-6 flex items-center">
+                    <CreditCard className="w-5 h-5 mr-2" />
+                    Payment Method
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    {/* Cash on Delivery Option */}
+                    <div className="border border-green-200 rounded-lg p-4 bg-green-50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                            <div className="w-2 h-2 rounded-full bg-white"></div>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-lg text-green-800">Cash on Delivery (COD)</h4>
+                            <p className="text-sm text-green-700">Pay with cash when your order is delivered</p>
+                          </div>
+                        </div>
+                        <div className="text-green-600 font-semibold">
+                          ✓ Selected
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* COD Information */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-5 h-5 text-blue-600 mt-0.5">
+                          ℹ️
+                        </div>
+                        <div className="text-sm text-blue-800">
+                          <h5 className="font-medium mb-2">Cash on Delivery Details:</h5>
+                          <ul className="space-y-1 text-blue-700">
+                            <li>• Pay with cash when your order arrives</li>
+                            <li>• No advance payment required</li>
+                            <li>• Have exact change ready for smooth delivery</li>
+                            <li>• COD fee: Free (included in delivery charges)</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Delivery Instructions */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Special Delivery Instructions (Optional)
+                      </label>
+                      <textarea
+                        name="deliveryInstructions"
+                        value={paymentInfo.deliveryInstructions || ""}
+                        onChange={handlePaymentInfoChange}
+                        placeholder="e.g., Ring the doorbell, Call before delivery, Leave at gate..."
+                        rows="3"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black resize-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Review Order */}
+            {currentStep === 3 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-semibold mb-6">Review Your Order</h2>
+                
+                {/* Order Items */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-xl font-semibold mb-4">Order Items</h3>
+                  <div className="space-y-4">
+                    {cartItems.map((item) => (
+                      <div key={item.id} className="flex items-center space-x-4">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                        <div className="flex-1">
+                          <h4 className="font-medium">{item.name}</h4>
+                          <p className="text-gray-600">Quantity: {item.quantity}</p>
+                        </div>
+                        <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Shipping Information */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-xl font-semibold mb-4">Shipping Information</h3>
+                  <div className="text-gray-700">
+                    <p>{paymentInfo.firstName} {paymentInfo.lastName}</p>
+                    <p>{paymentInfo.address}</p>
+                    <p>{paymentInfo.city}, {paymentInfo.state} {paymentInfo.zipCode}</p>
+                    <p>{paymentInfo.email}</p>
+                    {paymentInfo.phone && <p>{paymentInfo.phone}</p>}
+                  </div>
+                </div>
+
+                {/* Payment Method */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-xl font-semibold mb-4">Payment Method</h3>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                      <span className="text-green-600 font-bold">₹</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-green-800">Cash on Delivery</p>
+                      <p className="text-sm text-gray-600">Pay when your order arrives</p>
+                    </div>
+                  </div>
+                  {paymentInfo.deliveryInstructions && (
+                    <div className="mt-4 p-3 bg-gray-50 rounded">
+                      <p className="text-sm font-medium text-gray-700">Delivery Instructions:</p>
+                      <p className="text-sm text-gray-600">{paymentInfo.deliveryInstructions}</p>
+                    </div>
                   )}
                 </div>
-              ))}
-
-              {/* Final Divider */}
-              <hr className="border-gray-300 my-8" />
-            </div>
-
-            {/* Promo Code Section */}
-            <div className="py-6">
-              <h3
-                className="mb-4"
-                style={{
-                  color: "rgb(0, 0, 0)",
-                  font: '400 28px / 34px "Josefin Sans", sans-serif',
-                }}
-              >
-                You Have A Promo Code?
-              </h3>
-              <p
-                className="mb-6"
-                style={{
-                  color: "rgb(119, 119, 119)",
-                  font: "16px / 24px Raleway, sans-serif",
-                }}
-              >
-                To receive up-to-date promotional codes,
-                <br />
-                subscribe to us on social networks.
-              </p>
-
-              <form onSubmit={handlePromoSubmit} className="flex space-x-0">
-                <input
-                  type="text"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                  placeholder="Enter promo code"
-                  className="flex-1 px-4 py-3 border border-gray-300 border-r-0 focus:outline-none focus:border-black bg-gray-50"
-                  style={{
-                    font: "16px / 24px Raleway, sans-serif",
-                  }}
-                />
-                <Button
-                  type="submit"
-                  className="bg-black text-white hover:bg-gray-800 px-6 py-3  border border-black"
-                  style={{
-                    font: "16px / 24px Raleway, sans-serif",
-                  }}
-                >
-                  →
-                </Button>
-              </form>
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Order Summary - Right Side */}
@@ -309,37 +645,111 @@ const CheckoutPage = () => {
               {/* Total */}
               <div className="border-t border-gray-300 pt-6 mb-8">
                 <div className="flex justify-between items-center">
-                  <span
-                    className="font-semibold"
-                    style={{
-                      color: "rgb(0, 0, 0)",
-                      font: "18px / 24px Raleway, sans-serif",
-                    }}
-                  >
+                  <span className="font-semibold text-lg">
                     Total
                   </span>
-                  <span
-                    className="font-bold"
-                    style={{
-                      color: "rgb(0, 0, 0)",
-                      font: "24px / 30px Raleway, sans-serif",
-                    }}
-                  >
+                  <span className="font-bold text-2xl">
                     ${total.toFixed(2)}
                   </span>
                 </div>
               </div>
 
-              {/* Checkout Button */}
-              <Button
-                onClick={handleCheckout}
-                className="w-full bg-black text-white hover:bg-gray-800 py-4"
-                style={{
-                  font: "600 16px / 24px Raleway, sans-serif",
-                }}
-              >
-                Proceed to Order Details
-              </Button>
+              {/* Navigation Buttons */}
+              <div className="space-y-4">
+                {currentStep === 1 && (
+                  <>
+                    <Button
+                      onClick={nextStep}
+                      disabled={cartItems.length === 0}
+                      className="w-full bg-black text-white hover:bg-gray-800 py-4"
+                      style={{
+                        font: "600 16px / 24px Raleway, sans-serif",
+                      }}
+                    >
+                      <div className="flex items-center justify-center">
+                        Proceed to Shipping
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </div>
+                    </Button>
+                    <Button
+                      onClick={continueShopping}
+                      variant="outline"
+                      className="w-full py-3 border-black text-black hover:bg-gray-50"
+                    >
+                      Continue Shopping
+                    </Button>
+                  </>
+                )}
+
+                {currentStep === 2 && (
+                  <>
+                    <Button
+                      onClick={nextStep}
+                      className="w-full bg-black text-white hover:bg-gray-800 py-4"
+                      style={{
+                        font: "600 16px / 24px Raleway, sans-serif",
+                      }}
+                    >
+                      <div className="flex items-center justify-center">
+                        Review Order
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </div>
+                    </Button>
+                    <Button
+                      onClick={prevStep}
+                      variant="outline"
+                      className="w-full py-3 border-black text-black hover:bg-gray-50"
+                    >
+                      <div className="flex items-center justify-center">
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back to Cart
+                      </div>
+                    </Button>
+                  </>
+                )}
+
+                {currentStep === 3 && (
+                  <>
+                    <Button
+                      onClick={nextStep}
+                      className="w-full bg-black text-white hover:bg-gray-800 py-4"
+                      style={{
+                        font: "600 16px / 24px Raleway, sans-serif",
+                      }}
+                    >
+                      <div className="flex items-center justify-center">
+                        <Lock className="w-4 h-4 mr-2" />
+                        Place Order
+                      </div>
+                    </Button>
+                    <Button
+                      onClick={prevStep}
+                      variant="outline"
+                      className="w-full py-3 border-black text-black hover:bg-gray-50"
+                    >
+                      <div className="flex items-center justify-center">
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back to Shipping
+                      </div>
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {/* Security Notice */}
+              {currentStep >= 2 && (
+                <div className="text-xs text-gray-500 mt-4 text-center space-y-1">
+                  <p>
+                    <Lock className="w-3 h-3 inline mr-1" />
+                    Your personal information is secure
+                  </p>
+                  {currentStep === 3 && (
+                    <p className="text-green-600">
+                      💰 Cash on Delivery - No advance payment required
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
