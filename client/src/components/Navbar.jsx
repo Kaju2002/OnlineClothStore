@@ -73,7 +73,7 @@ const Navbar = () => {
             </li>
             <li className="relative group">
               <a
-                href="#"
+                href="/product"
                 className="flex items-center text-sm font-medium text-gray-700 hover:text-black transition-colors duration-200 tracking-[0.05em]"
                 onMouseEnter={() => handleDropdown("pages")}
               >

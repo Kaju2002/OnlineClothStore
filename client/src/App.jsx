@@ -5,6 +5,7 @@ import RegisterPage from "./pages/Register";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Login from "./pages/Login";
+import ShopPage from "./pages/Product";
 function App() {
   return (
     <div className="min-h-screen px-4 md:px-16 flex flex-col">
@@ -15,7 +16,7 @@ function App() {
           {/* Add more routes here as needed */}
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<Login />} />
-          {/* <Route path="/blog" element={<Blog />} /> */}
+          <Route path="/product" element={<ShopPage />} />
           {/* <Route path="/contact" element={<Contact />} /> */}
         </Routes>
       </main>
