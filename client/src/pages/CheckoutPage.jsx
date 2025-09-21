@@ -1,8 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Trash2, Plus, Minus, CreditCard, Lock, ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import ProductHeader from "../components/ProductHeader";
+
+// Helper function to format currency
+const formatCurrency = (amount, currency = 'LKR') => {
+  if (currency === 'LKR') {
+    return `LKR ${amount.toFixed(2)}`;
+  }
+  return `$${amount.toFixed(2)}`;
+};
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -10,26 +18,10 @@ const CheckoutPage = () => {
   // Multi-step checkout state
   const [currentStep, setCurrentStep] = useState(1); // 1: Cart, 2: Payment Info, 3: Review
   
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Fashionee - Cotton Shirt (S)",
-      price: 35.99,
-      originalPrice: 52.0,
-      quantity: 1,
-      image:
-        "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=200&h=200&fit=crop",
-    },
-    {
-      id: 2,
-      name: "Spray Wrap Skirt",
-      price: 110.99,
-      originalPrice: null,
-      quantity: 1,
-      image:
-        "https://images.unsplash.com/photo-1583496661160-fb5886a13fe7?w=200&h=200&fit=crop",
-    },
-  ]);
+  const [cartItems, setCartItems] = useState([]);
+  const [cartData, setCartData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [promoCode, setPromoCode] = useState("");
   
@@ -51,26 +43,119 @@ const CheckoutPage = () => {
   
   const [errors, setErrors] = useState({});
 
-  const updateQuantity = (id, change) => {
-    setCartItems((items) =>
-      items.map((item) =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + change) }
-          : item
-      )
-    );
+  // Fetch cart data from API
+  useEffect(() => {
+    fetchCartData();
+  }, []);
+
+  const fetchCartData = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setError('Please login to view your cart');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch('https://trendbite-api.onrender.com/api/cart', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        setCartData(result.data.cart);
+        // Transform API data to match UI format
+        const transformedItems = result.data.cart.items.map(item => ({
+          id: item._id,
+          name: `${item.product.name} (${item.variant.size})`,
+          price: item.variant.color && item.product.variants.find(v => v.sku === item.variant.sku)?.price?.sale || item.unitPrice,
+          originalPrice: item.variant.color && item.product.variants.find(v => v.sku === item.variant.sku)?.price?.regular || null,
+          quantity: item.quantity,
+          image: item.product.mainImage?.url || item.product.images[0]?.url || '',
+          sku: item.variant.sku,
+          productId: item.product._id
+        }));
+        setCartItems(transformedItems);
+      } else {
+        setError(result.message || 'Failed to fetch cart data');
+      }
+    } catch (error) {
+      console.error('Error fetching cart:', error);
+      setError('Failed to load cart data');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const removeItem = (id) => {
-    setCartItems((items) => items.filter((item) => item.id !== id));
+  const updateQuantity = async (id, change) => {
+    const item = cartItems.find(item => item.id === id);
+    if (!item) return;
+
+    const newQuantity = Math.max(1, item.quantity + change);
+    
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`https://trendbite-api.onrender.com/api/cart/items/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ quantity: newQuantity })
+      });
+
+      if (response.ok) {
+        // Update local state
+        setCartItems((items) =>
+          items.map((item) =>
+            item.id === id
+              ? { ...item, quantity: newQuantity }
+              : item
+          )
+        );
+        // Refresh cart data to get updated totals
+        fetchCartData();
+      } else {
+        console.error('Failed to update quantity');
+      }
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+    }
   };
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-  const delivery = 16;
-  const total = subtotal + delivery;
+  const removeItem = async (id) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`https://trendbite-api.onrender.com/api/cart/items/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // Update local state
+        setCartItems((items) => items.filter((item) => item.id !== id));
+        // Refresh cart data to get updated totals
+        fetchCartData();
+      } else {
+        console.error('Failed to remove item');
+      }
+    } catch (error) {
+      console.error('Error removing item:', error);
+    }
+  };
+
+  // Use API data for calculations if available, otherwise fallback to local calculation
+  const subtotal = cartData?.subtotal || cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const delivery = cartData?.deliveryCost || 16;
+  const total = cartData?.totalAmount || (subtotal + delivery);
 
   const handlePromoSubmit = (e) => {
     e.preventDefault();
@@ -193,7 +278,18 @@ const CheckoutPage = () => {
               <div className="space-y-6">
                 <h2 className="text-2xl font-semibold mb-6">Shopping Cart</h2>
                 
-                {cartItems.length === 0 ? (
+                {loading ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-600">Loading your cart...</p>
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-12">
+                    <p className="text-red-600 mb-4">{error}</p>
+                    <Button onClick={fetchCartData} className="bg-black text-white hover:bg-gray-800">
+                      Retry
+                    </Button>
+                  </div>
+                ) : cartItems.length === 0 ? (
                   <div className="text-center py-12">
                     <h3 className="text-xl font-semibold mb-4">Your cart is empty</h3>
                     <p className="text-gray-600 mb-6">Looks like you haven't added any items to your cart yet.</p>
@@ -262,7 +358,7 @@ const CheckoutPage = () => {
                                   </div>
 
                                   <span className="font-semibold min-w-[80px] text-right text-lg">
-                                    ${(item.price * item.quantity).toFixed(2)}
+                                    {formatCurrency(item.price * item.quantity, cartData?.currency)}
                                   </span>
                                 </div>
                               </div>
@@ -526,7 +622,7 @@ const CheckoutPage = () => {
                           <h4 className="font-medium">{item.name}</h4>
                           <p className="text-gray-600">Quantity: {item.quantity}</p>
                         </div>
-                        <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="font-semibold">{formatCurrency(item.price * item.quantity, cartData?.currency)}</p>
                       </div>
                     ))}
                   </div>
@@ -597,7 +693,7 @@ const CheckoutPage = () => {
                       font: "16px / 24px Raleway, sans-serif",
                     }}
                   >
-                    ${subtotal.toFixed(2)}
+                    {formatCurrency(subtotal, cartData?.currency)}
                   </span>
                 </div>
 
@@ -637,7 +733,7 @@ const CheckoutPage = () => {
                       font: "16px / 24px Raleway, sans-serif",
                     }}
                   >
-                    ${delivery}
+                    {formatCurrency(delivery, cartData?.currency)}
                   </span>
                 </div>
               </div>
@@ -649,7 +745,7 @@ const CheckoutPage = () => {
                     Total
                   </span>
                   <span className="font-bold text-2xl">
-                    ${total.toFixed(2)}
+                    {formatCurrency(total, cartData?.currency)}
                   </span>
                 </div>
               </div>
