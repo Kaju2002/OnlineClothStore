@@ -12,6 +12,8 @@ import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import ProfilePage from "./pages/ProfilePage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SetNewPasswordPage from "./pages/SetNewPasswordPage";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 function App() {
   return (
     <div className="min-h-screen px-4 md:px-16 flex flex-col">
@@ -32,6 +34,17 @@ function App() {
         </Routes>
       </main>
       <Footer />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Trash2, Plus, Minus, CreditCard, Lock, ArrowLeft, ArrowRight } from "lu
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import ProductHeader from "../components/ProductHeader";
+import { toast } from 'react-toastify';
 
 // Helper function to format currency
 const formatCurrency = (amount, currency = 'LKR') => {
@@ -122,13 +123,19 @@ const CheckoutPage = () => {
         fetchCartData();
       } else {
         console.error('Failed to update quantity');
+        toast.error('Failed to update quantity');
       }
     } catch (error) {
       console.error('Error updating quantity:', error);
+      toast.error('Failed to update quantity');
     }
   };
 
   const removeItem = async (id) => {
+    // Get item name before deletion for the success message
+    const itemToDelete = cartItems.find(item => item.id === id);
+    const itemName = itemToDelete ? itemToDelete.name : 'Item';
+    
     try {
       const token = localStorage.getItem('authToken');
       const response = await fetch(`https://trendbite-api.onrender.com/api/cart/items/${id}`, {
@@ -144,11 +151,15 @@ const CheckoutPage = () => {
         setCartItems((items) => items.filter((item) => item.id !== id));
         // Refresh cart data to get updated totals
         fetchCartData();
+        // Show removal toast in red color
+        toast.error(`${itemName} removed from cart successfully!`);
       } else {
         console.error('Failed to remove item');
+        toast.error('Failed to remove item from cart');
       }
     } catch (error) {
       console.error('Error removing item:', error);
+      toast.error('Failed to remove item from cart');
     }
   };
 
