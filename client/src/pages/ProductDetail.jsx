@@ -106,7 +106,7 @@ const ProductDetail = () => {
     setQuantity(Math.max(1, quantity + change));
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!selectedVariant) {
       alert('Please select a variant');
       return;
@@ -117,20 +117,47 @@ const ProductDetail = () => {
       return;
     }
     
-    const cartItem = {
+    // Get the auth token from localStorage
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      alert('Please login to add items to cart');
+      return;
+    }
+    
+    const cartData = {
       productId: product._id,
-      variantId: selectedVariant._id,
-      name: product.name,
-      price: selectedVariant.price.sale || selectedVariant.price.regular,
-      size: selectedVariant.size,
-      color: selectedVariant.color,
-      quantity: quantity,
-      image: product.images[0]?.url
+      variant: {
+        sku: selectedVariant.sku,
+        size: selectedVariant.size,
+        color: {
+          name: selectedVariant.color.name,
+          hex: selectedVariant.color.hex
+        }
+      },
+      quantity: quantity
     };
     
-    console.log('Adding to cart:', cartItem);
-    // Here you would typically dispatch to a cart context or make an API call
-    alert(`Added ${quantity} x ${product.name} (${selectedVariant.size}, ${selectedVariant.color.name}) to cart!`);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(cartData)
+      });
+
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        alert(`Added ${quantity} x ${product.name} (${selectedVariant.size}, ${selectedVariant.color.name}) to cart!`);
+      } else {
+        alert('Failed to add item to cart: ' + (result.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      alert('Failed to add item to cart');
+    }
   };
 
   const renderStars = (rating, interactive = false, onStarClick = null) => {
