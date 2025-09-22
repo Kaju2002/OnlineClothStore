@@ -247,38 +247,20 @@ const ProductCollection = () => {
             </div>
           </div>
 
-          {/* Colors */}
-          <div className="mb-8">
-            <h3 className="font-semibold text-lg mb-4 border-b-2 border-primary inline-block pb-1">Colors</h3>
-            <div className="space-y-2">
-              {[
-                { name: 'All', color: 'bg-white border-2 border-gray-300' },
-                { name: 'Red', color: 'bg-red-500' },
-                { name: 'Blue', color: 'bg-blue-500' },
-                { name: 'Green', color: 'bg-green-500' },
-                { name: 'Yellow', color: 'bg-yellow-500' },
-                { name: 'Orange', color: 'bg-orange-500' },
-                { name: 'Purple', color: 'bg-purple-500' }
-              ].map((color) => (
-                <label key={color.name} className="flex items-center space-x-3 cursor-pointer">
-                  <input type="checkbox" className="rounded" />
-                  <div className={`w-4 h-4 rounded-full ${color.color}`}></div>
-                  <span className="text-sm">{color.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Apply Filter Button */}
-          <Button className="w-full bg-black text-white hover:bg-gray-800 rounded-none">
-            Apply Filter
-          </Button>
 
           {/* Reviewed By You Section */}
           <div className="mt-8">
             <h3 className="font-semibold text-lg mb-4 border-b-2 border-primary inline-block pb-1">
               Reviewed By You
             </h3>
+            <div className="space-y-3">
+              {/* ...existing reviewed by you content... */}
+            </div>
+          </div>
+
+          {/* Reviewed By You Section */}
+          <div className="mt-8">
+            
             
             <div className="space-y-3">
               {[
@@ -304,26 +286,23 @@ const ProductCollection = () => {
                   rating: 4
                 }
               ].map((product) => (
-                <div key={product.id} className="flex items-center space-x-3 p-3 bg-white rounded border border-gray-100  transition-shadow cursor-pointer">
+                <div key={product.id} className="flex items-center gap-5 p-5 bg-white rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
                   <img 
                     src={product.image} 
                     alt={product.name}
-                    className="w-12 h-12 object-cover rounded"
+                    className="w-28 h-28 object-cover rounded-xl shadow-md border border-gray-100"
                   />
-                  
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-xs text-gray-800 mb-1 truncate">{product.name}</h4>
-                    
-                    {/* Rating */}
-                    <div className="flex items-center space-x-1 mb-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="font-semibold text-base text-gray-900 truncate">{product.name}</h4>
+                      <span className="font-bold text-lg text-black">${product.price}</span>
+                    </div>
+                    <div className="flex items-center space-x-1 mb-2">
                       {[...Array(5)].map((_, i) => (
-                        <span key={i} className={`text-xs ${i < product.rating ? 'text-yellow-400' : 'text-gray-300'}`}>
-                          ★
-                        </span>
+                        <span key={i} className={`text-base ${i < product.rating ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
                       ))}
                     </div>
-                    
-                    <span className="font-semibold text-xs text-black">${product.price}</span>
+                    <p className="text-gray-600 text-sm italic line-clamp-2">“Great quality and fits perfectly. Would recommend to anyone looking for comfort and style!”</p>
                   </div>
                 </div>
               ))}
