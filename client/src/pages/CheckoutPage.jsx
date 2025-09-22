@@ -27,22 +27,24 @@ const CheckoutPage = () => {
   const [promoCode, setPromoCode] = useState("");
   
   // Payment and shipping information state
-  const [paymentInfo, setPaymentInfo] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    address: "",
+  // Checkout form state matching required JSON structure
+  const [deliveryAddress, setDeliveryAddress] = useState({
+    street: "",
     city: "",
     state: "",
     zipCode: "",
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    cardName: "",
+    country: "Sri Lanka",
+    phone: ""
   });
+ 
+  const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
+  const [discountCode, setDiscountCode] = useState("");
+  const [notes, setNotes] = useState("");
   
+
   const [errors, setErrors] = useState({});
+
+  // Handlers for address and notes fields (must be at top level, after state)
 
   // Fetch cart data from API
   useEffect(() => {
@@ -70,7 +72,7 @@ const CheckoutPage = () => {
       
       if (response.ok && result.success) {
         setCartData(result.data.cart);
-        // Transform API data to match UI format
+        // Store the full variant object for each cart item
         const transformedItems = result.data.cart.items.map(item => ({
           id: item._id,
           name: `${item.product.name} (${item.variant.size})`,
@@ -79,7 +81,8 @@ const CheckoutPage = () => {
           quantity: item.quantity,
           image: item.product.mainImage?.url || item.product.images[0]?.url || '',
           sku: item.variant.sku,
-          productId: item.product._id
+          productId: item.product._id,
+          variant: item.variant // <-- store the full variant object
         }));
         setCartItems(transformedItems);
       } else {
@@ -174,39 +177,37 @@ const CheckoutPage = () => {
     console.log("Promo code:", promoCode);
   };
 
-  const handlePaymentInfoChange = (e) => {
+
+
+  // Handlers for address and notes fields (must be at top level)
+  const handleDeliveryAddressChange = (e) => {
     const { name, value } = e.target;
-    setPaymentInfo(prev => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
-    }
+    setDeliveryAddress(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
   };
+
+
+
+  const handleNotesChange = (e) => setNotes(e.target.value);
+
+  
 
   const validateStep = () => {
     const newErrors = {};
-    
     if (currentStep === 2) {
-      // Validate contact and shipping info only (no payment info needed for COD)
-      const requiredFields = ['firstName', 'lastName', 'email', 'address', 'city', 'state', 'zipCode'];
-      
+      // Validate delivery address fields for COD
+      const requiredFields = ['street', 'city', 'state', 'zipCode', 'country', 'phone'];
       requiredFields.forEach(field => {
-        if (!paymentInfo[field].trim()) {
+        if (!deliveryAddress[field] || !deliveryAddress[field].trim()) {
           newErrors[field] = "This field is required";
         }
       });
-      
-      // Email validation
-      if (paymentInfo.email && !/\S+@\S+\.\S+/.test(paymentInfo.email)) {
-        newErrors.email = "Please enter a valid email address";
-      }
     }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep === 1) {
       // Check if cart has items
       if (cartItems.length === 0) {
@@ -220,17 +221,41 @@ const CheckoutPage = () => {
         setCurrentStep(3);
       }
     } else if (currentStep === 3) {
-      // Final checkout - navigate to order confirmation
-      navigate("/order-confirmation", {
-        state: {
-          cartItems,
-          paymentInfo,
-          subtotal,
-          delivery,
-          total,
-          promoCode
+      // Build order payload using the original variant object from cart
+      const orderPayload = {
+        items: cartItems.map(item => ({
+          productId: item.productId,
+          variant: item.variant, // use the full variant object from cart
+          quantity: item.quantity
+        })),
+        deliveryAddress,
+        billingAddress: {
+          ...deliveryAddress
+        },
+        paymentMethod,
+        discountCode,
+        notes
+      };
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(orderPayload)
+        });
+        const result = await response.json();
+        console.log('Order API response:', result);
+        if (response.ok && result.success) {
+          navigate("/order-confirmation", { state: { orderId: result.data?._id } });
+        } else {
+          toast.error(result.message || 'Failed to place order');
         }
-      });
+      } catch (error) {
+        toast.error('Failed to place order');
+      }
     }
   };
 
@@ -419,136 +444,78 @@ const CheckoutPage = () => {
                 
                 {/* Contact Information */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-xl font-semibold mb-6">Contact Information</h3>
+                  <h3 className="text-xl font-semibold mb-6">Delivery Address</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        First Name *
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Street *</label>
                       <input
                         type="text"
-                        name="firstName"
-                        value={paymentInfo.firstName}
-                        onChange={handlePaymentInfoChange}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
-                          errors.firstName ? 'border-red-500' : 'border-gray-300'
-                        }`}
+                        name="street"
+                        value={deliveryAddress.street}
+                        onChange={handleDeliveryAddressChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${errors.street ? 'border-red-500' : 'border-gray-300'}`}
                       />
-                      {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
+                      {errors.street && <p className="text-red-500 text-sm mt-1">{errors.street}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Last Name *
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
                       <input
                         type="text"
-                        name="lastName"
-                        value={paymentInfo.lastName}
-                        onChange={handlePaymentInfoChange}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
-                          errors.lastName ? 'border-red-500' : 'border-gray-300'
-                        }`}
+                        name="city"
+                        value={deliveryAddress.city}
+                        onChange={handleDeliveryAddressChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
                       />
-                      {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
+                      {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email Address *
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">State *</label>
                       <input
-                        type="email"
-                        name="email"
-                        value={paymentInfo.email}
-                        onChange={handlePaymentInfoChange}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
-                          errors.email ? 'border-red-500' : 'border-gray-300'
-                        }`}
+                        type="text"
+                        name="state"
+                        value={deliveryAddress.state}
+                        onChange={handleDeliveryAddressChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${errors.state ? 'border-red-500' : 'border-gray-300'}`}
                       />
-                      {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                      {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone Number
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code *</label>
+                      <input
+                        type="text"
+                        name="zipCode"
+                        value={deliveryAddress.zipCode}
+                        onChange={handleDeliveryAddressChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${errors.zipCode ? 'border-red-500' : 'border-gray-300'}`}
+                      />
+                      {errors.zipCode && <p className="text-red-500 text-sm mt-1">{errors.zipCode}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Country *</label>
+                      <input
+                        type="text"
+                        name="country"
+                        value={deliveryAddress.country}
+                        onChange={handleDeliveryAddressChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${errors.country ? 'border-red-500' : 'border-gray-300'}`}
+                      />
+                      {errors.country && <p className="text-red-500 text-sm mt-1">{errors.country}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
                       <input
                         type="tel"
                         name="phone"
-                        value={paymentInfo.phone}
-                        onChange={handlePaymentInfoChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                        value={deliveryAddress.phone}
+                        onChange={handleDeliveryAddressChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
                       />
+                      {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
                     </div>
                   </div>
                 </div>
 
-                {/* Shipping Address */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-xl font-semibold mb-6">Shipping Address</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Address *
-                      </label>
-                      <input
-                        type="text"
-                        name="address"
-                        value={paymentInfo.address}
-                        onChange={handlePaymentInfoChange}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
-                          errors.address ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      />
-                      {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          City *
-                        </label>
-                        <input
-                          type="text"
-                          name="city"
-                          value={paymentInfo.city}
-                          onChange={handlePaymentInfoChange}
-                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
-                            errors.city ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        />
-                        {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          State *
-                        </label>
-                        <input
-                          type="text"
-                          name="state"
-                          value={paymentInfo.state}
-                          onChange={handlePaymentInfoChange}
-                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
-                            errors.state ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        />
-                        {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          ZIP Code *
-                        </label>
-                        <input
-                          type="text"
-                          name="zipCode"
-                          value={paymentInfo.zipCode}
-                          onChange={handlePaymentInfoChange}
-                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
-                            errors.zipCode ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        />
-                        {errors.zipCode && <p className="text-red-500 text-sm mt-1">{errors.zipCode}</p>}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* Billing Address removed for COD-only flow */}
 
                 {/* Payment Method */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -557,6 +524,15 @@ const CheckoutPage = () => {
                     Payment Method
                   </h3>
                   
+                  <div className="flex items-center mb-4">
+                    <span className="inline-block bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full mr-3">
+                      Only Cash on Delivery Available
+                    </span>
+                    <span className="inline-flex items-center text-green-700 font-medium">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      COD Selected
+                    </span>
+                  </div>
                   <div className="space-y-4">
                     {/* Cash on Delivery Option */}
                     <div className="border border-green-200 rounded-lg p-4 bg-green-50">
@@ -601,8 +577,8 @@ const CheckoutPage = () => {
                       </label>
                       <textarea
                         name="deliveryInstructions"
-                        value={paymentInfo.deliveryInstructions || ""}
-                        onChange={handlePaymentInfoChange}
+                        value={notes}
+                        onChange={handleNotesChange}
                         placeholder="e.g., Ring the doorbell, Call before delivery, Leave at gate..."
                         rows="3"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black resize-none"
@@ -643,11 +619,10 @@ const CheckoutPage = () => {
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h3 className="text-xl font-semibold mb-4">Shipping Information</h3>
                   <div className="text-gray-700">
-                    <p>{paymentInfo.firstName} {paymentInfo.lastName}</p>
-                    <p>{paymentInfo.address}</p>
-                    <p>{paymentInfo.city}, {paymentInfo.state} {paymentInfo.zipCode}</p>
-                    <p>{paymentInfo.email}</p>
-                    {paymentInfo.phone && <p>{paymentInfo.phone}</p>}
+                    <p>{deliveryAddress.street}</p>
+                    <p>{deliveryAddress.city}, {deliveryAddress.state} {deliveryAddress.zipCode}</p>
+                    <p>{deliveryAddress.country}</p>
+                    <p>{deliveryAddress.phone}</p>
                   </div>
                 </div>
 
@@ -663,10 +638,10 @@ const CheckoutPage = () => {
                       <p className="text-sm text-gray-600">Pay when your order arrives</p>
                     </div>
                   </div>
-                  {paymentInfo.deliveryInstructions && (
+                  {notes && (
                     <div className="mt-4 p-3 bg-gray-50 rounded">
                       <p className="text-sm font-medium text-gray-700">Delivery Instructions:</p>
-                      <p className="text-sm text-gray-600">{paymentInfo.deliveryInstructions}</p>
+                      <p className="text-sm text-gray-600">{notes}</p>
                     </div>
                   )}
                 </div>
