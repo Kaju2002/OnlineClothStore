@@ -136,30 +136,36 @@ const Navbar = () => {
               </a>
             </li>
             <li className="relative group">
-              <a
-                href="/product"
-                className="flex items-center text-sm font-medium text-gray-700 hover:text-black transition-colors duration-200 tracking-[0.05em]"
+              <div
+                className="relative group"
                 onMouseEnter={() => handleDropdown("pages")}
+                onMouseLeave={() => handleDropdown("")}
               >
-                Pages
-                <ChevronDown
-                  size={16}
-                  className="ml-1 transition-transform duration-200 group-hover:rotate-180"
-                />
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-black transition-all duration-300 group-hover:w-full"></span>
-              </a>
+                <span
+                  className="flex items-center text-sm font-medium text-gray-700 hover:text-black transition-colors duration-200 tracking-[0.05em] cursor-pointer"
+                >
+                  Explore
+                  <ChevronDown
+                    size={16}
+                    className="ml-1 transition-transform duration-200 group-hover:rotate-180"
+                  />
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-black transition-all duration-300 group-hover:w-full"></span>
+                </span>
+                {activeDropdown === "pages" && (
+                  <div className="absolute left-0 mt-2 w-40 bg-white border border-gray-100 rounded shadow-lg z-20">
+                    <Link to="/login" className="block px-4 py-2 text-gray-700 hover:bg-gray-50">Login</Link>
+                    <Link to="/register" className="block px-4 py-2 text-gray-700 hover:bg-gray-50">Registration</Link>
+                    <Link to="/about" className="block px-4 py-2 text-gray-700 hover:bg-gray-50">About Us</Link>
+                  </div>
+                )}
+              </div>
             </li>
             <li className="relative group">
               <a
-                href="#"
+                href="/product"
                 className="flex items-center text-sm font-medium text-gray-700 hover:text-black transition-colors duration-200 tracking-[0.05em]"
-                onMouseEnter={() => handleDropdown("shop")}
               >
-                Shop
-                <ChevronDown
-                  size={16}
-                  className="ml-1 transition-transform duration-200 group-hover:rotate-180"
-                />
+                All Products
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-black transition-all duration-300 group-hover:w-full"></span>
               </a>
             </li>
@@ -173,13 +179,13 @@ const Navbar = () => {
               </Link>
             </li>
             <li>
-              <a
-                href="#"
+              <Link
+                to="/contact"
                 className="text-sm font-medium text-gray-700 hover:text-black transition-colors duration-200 relative group tracking-[0.05em]"
               >
                 Contact
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-black transition-all duration-300 group-hover:w-full"></span>
-              </a>
+              </Link>
             </li>
           </ul>
 
@@ -295,7 +301,7 @@ const Navbar = () => {
               onClick={() => handleDropdown("mobile-pages")}
               className="flex items-center justify-between w-full text-lg font-medium text-gray-700 hover:text-black transition-colors duration-200 py-2"
             >
-              Pages
+              Explore
               <ChevronDown
                 size={16}
                 className={`transition-transform duration-200 ${
@@ -305,68 +311,19 @@ const Navbar = () => {
             </button>
             {activeDropdown === "mobile-pages" && (
               <div className="pl-4 space-y-2">
-                <a
-                  href="#"
-                  className="block text-gray-600 hover:text-black transition-colors duration-200 py-1"
-                >
-                  About Us
-                </a>
-                <a
-                  href="#"
-                  className="block text-gray-600 hover:text-black transition-colors duration-200 py-1"
-                >
-                  Services
-                </a>
-                <a
-                  href="#"
-                  className="block text-gray-600 hover:text-black transition-colors duration-200 py-1"
-                >
-                  FAQ
-                </a>
+                <Link to="/login" className="block text-gray-600 hover:text-black transition-colors duration-200 py-1">Login</Link>
+                <Link to="/register" className="block text-gray-600 hover:text-black transition-colors duration-200 py-1">Registration</Link>
+                <Link to="/about" className="block text-gray-600 hover:text-black transition-colors duration-200 py-1">About Us</Link>
               </div>
             )}
           </div>
           <div className="space-y-2">
-            <button
-              onClick={() => handleDropdown("mobile-shop")}
-              className="flex items-center justify-between w-full text-lg font-medium text-gray-700 hover:text-black transition-colors duration-200 py-2"
+            <a
+              href="/product"
+              className="block text-lg font-medium text-gray-700 hover:text-black transition-colors duration-200 py-2"
             >
-              Shop
-              <ChevronDown
-                size={16}
-                className={`transition-transform duration-200 ${
-                  activeDropdown === "mobile-shop" ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-            {activeDropdown === "mobile-shop" && (
-              <div className="pl-4 space-y-2">
-                <a
-                  href="#"
-                  className="block text-gray-600 hover:text-black transition-colors duration-200 py-1"
-                >
-                  Women
-                </a>
-                <a
-                  href="#"
-                  className="block text-gray-600 hover:text-black transition-colors duration-200 py-1"
-                >
-                  Men
-                </a>
-                <a
-                  href="#"
-                  className="block text-gray-600 hover:text-black transition-colors duration-200 py-1"
-                >
-                  Accessories
-                </a>
-                <a
-                  href="#"
-                  className="block text-gray-600 hover:text-black transition-colors duration-200 py-1"
-                >
-                  Sale
-                </a>
-              </div>
-            )}
+              All Products
+            </a>
           </div>
           <Link
             to="/blog"
@@ -374,12 +331,12 @@ const Navbar = () => {
           >
             Blog
           </Link>
-          <a
-            href="#"
+          <Link
+            to="/contact"
             className="block text-lg font-medium text-gray-700 hover:text-black transition-colors duration-200 py-2"
           >
             Contact
-          </a>
+          </Link>
 
           {/* Mobile Action Buttons */}
           <div className="pt-4 border-t border-gray-100">
