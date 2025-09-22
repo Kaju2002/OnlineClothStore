@@ -1,6 +1,6 @@
 // Navbar.jsx
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Search,
   User,
@@ -164,13 +164,13 @@ const Navbar = () => {
               </a>
             </li>
             <li>
-              <a
-                href="#"
+              <Link
+                to="/blog"
                 className="text-sm font-medium text-gray-700 hover:text-black transition-colors duration-200 relative group tracking-[0.05em]"
               >
                 Blog
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-black transition-all duration-300 group-hover:w-full"></span>
-              </a>
+              </Link>
             </li>
             <li>
               <a
@@ -368,12 +368,12 @@ const Navbar = () => {
               </div>
             )}
           </div>
-          <a
-            href="#"
+          <Link
+            to="/blog"
             className="block text-lg font-medium text-gray-700 hover:text-black transition-colors duration-200 py-2"
           >
             Blog
-          </a>
+          </Link>
           <a
             href="#"
             className="block text-lg font-medium text-gray-700 hover:text-black transition-colors duration-200 py-2"

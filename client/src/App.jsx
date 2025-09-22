@@ -2,8 +2,8 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import RegisterPage from "./pages/Register";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
+import Navbar from "../src/components/Navbar";
+import Footer from "../src/components/Footer";
 import Login from "./pages/Login";
 import ShopPage from "./pages/Product";
 import ProductDetail from "./pages/ProductDetail";
@@ -12,6 +12,7 @@ import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import ProfilePage from "./pages/ProfilePage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SetNewPasswordPage from "./pages/SetNewPasswordPage";
+import BlogPage from "./pages/BlogPage";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 function App() {
@@ -31,6 +32,7 @@ function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/set-new-password" element={<SetNewPasswordPage />} />
+          <Route path="/blog" element={<BlogPage />} />
         </Routes>
       </main>
       <Footer />
