@@ -1,47 +1,35 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { CheckCircle, Package, Clock, Phone, MapPin } from "lucide-react";
 import { Button } from "../ui/button";
 
 const OrderConfirmationPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const orderData = location.state?.order;
 
-  // Mock order data - in real app, this would come from state/props/API
-  const orderData = {
-    orderNumber: "ORD-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
-    orderDate: new Date().toLocaleDateString(),
-    expectedDelivery: "Aug 02, 2024 at 16:00",
-    totalAmount: 162.98,
-    items: [
-      {
-        id: 1,
-        name: "Fashionee - cotton shirt (S)",
-        price: 35.99,
-        quantity: 1,
-        image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=80&h=80&fit=crop"
-      },
-      {
-        id: 2,
-        name: "Spray wrap skirt",
-        price: 110.99,
-        quantity: 1,
-        image: "https://images.unsplash.com/photo-1583496661160-fb5886a13fe7?w=80&h=80&fit=crop"
-      }
-    ],
-    customer: {
-      name: "Customer Name",
-      phone: "+1 (555) 123-4567",
-      email: "customer@example.com",
-      address: "123 Main Street, City, State 12345"
-    }
-  };
+  if (!orderData) {
+    return <div className="min-h-screen flex items-center justify-center text-xl">Order not found.</div>;
+  }
+
+  // Order number: use last 5 chars of _id
+  const orderId = orderData._id || "";
+  const orderNumber = orderId ? `ORD-${orderId.slice(-5).toUpperCase()}` : "-";
+  // Order date and expected delivery
+  const orderDateObj = orderData.createdAt ? new Date(orderData.createdAt) : new Date();
+  const orderDate = orderDateObj.toLocaleDateString();
+  const expectedDeliveryObj = new Date(orderDateObj.getTime() + 3 * 24 * 60 * 60 * 1000);
+  const expectedDelivery = expectedDeliveryObj.toLocaleDateString() + ' at ' + expectedDeliveryObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // Dummy contact info only
+  const customerPhone = "+1 (555) 123-4567";
+  const customerEmail = "customer@example.com";
 
   const handleContinueShopping = () => {
     navigate("/");
   };
 
   const handleViewOrders = () => {
-    navigate("/my-orders"); // You can create this page later
+    navigate("/my-orders");
   };
 
   return (
@@ -108,10 +96,9 @@ const OrderConfirmationPage = () => {
                       font: '16px / 24px Raleway, sans-serif'
                     }}
                   >
-                    {orderData.orderNumber}
+                    {orderId ? `ORD-${orderId.slice(-5).toUpperCase()}` : "-"}
                   </span>
                 </div>
-                
                 <div className="flex items-center justify-between">
                   <span 
                     style={{ 
@@ -127,7 +114,7 @@ const OrderConfirmationPage = () => {
                       font: '16px / 24px Raleway, sans-serif'
                     }}
                   >
-                    {orderData.orderDate}
+                    {orderDate}
                   </span>
                 </div>
                 
@@ -146,7 +133,7 @@ const OrderConfirmationPage = () => {
                       font: '16px / 24px Raleway, sans-serif'
                     }}
                   >
-                    Cash on Delivery
+                    {orderData.payment?.method === 'cash_on_delivery' ? 'Cash on Delivery' : orderData.payment?.method || '-'}
                   </span>
                 </div>
                 
@@ -193,7 +180,7 @@ const OrderConfirmationPage = () => {
                   font: '18px / 24px Raleway, sans-serif'
                 }}
               >
-                {orderData.expectedDelivery}
+                {expectedDelivery}
               </p>
               
               <div className="flex items-start mt-4">
@@ -204,7 +191,7 @@ const OrderConfirmationPage = () => {
                     font: '14px / 20px Raleway, sans-serif'
                   }}
                 >
-                  {orderData.customer.address}
+                  {orderData.deliveryAddress?.street}, {orderData.deliveryAddress?.city}, {orderData.deliveryAddress?.state} {orderData.deliveryAddress?.zipCode}, {orderData.deliveryAddress?.country}
                 </p>
               </div>
             </div>
@@ -230,10 +217,9 @@ const OrderConfirmationPage = () => {
                       font: '16px / 24px Raleway, sans-serif'
                     }}
                   >
-                    {orderData.customer.phone}
+                    +1 (555) 123-4567
                   </span>
                 </div>
-                
                 <div className="flex items-center">
                   <span className="w-4 h-4 text-gray-500 mr-3">@</span>
                   <span 
@@ -242,7 +228,7 @@ const OrderConfirmationPage = () => {
                       font: '16px / 24px Raleway, sans-serif'
                     }}
                   >
-                    {orderData.customer.email}
+                    customer@example.com
                   </span>
                 </div>
               </div>
@@ -263,11 +249,11 @@ const OrderConfirmationPage = () => {
               </h3>
               
               <div className="space-y-6">
-                {orderData.items.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-4">
+                {orderData.items.map((item, idx) => (
+                  <div key={idx} className="flex items-center space-x-4">
                     <img
-                      src={item.image}
-                      alt={item.name}
+                      src={item.product?.images?.[0]?.url || ''}
+                      alt={item.product?.images?.[0]?.alt || item.product?.name || ''}
                       className="w-16 h-16 object-cover rounded"
                     />
                     <div className="flex-1">
@@ -278,7 +264,7 @@ const OrderConfirmationPage = () => {
                           font: '16px / 20px Raleway, sans-serif'
                         }}
                       >
-                        {item.name}
+                        {item.product?.name}
                       </h4>
                       <p 
                         style={{ 
@@ -296,7 +282,7 @@ const OrderConfirmationPage = () => {
                         font: '16px / 20px Raleway, sans-serif'
                       }}
                     >
-                      ${item.price}
+                      LKR {item.totalPrice}
                     </span>
                   </div>
                 ))}

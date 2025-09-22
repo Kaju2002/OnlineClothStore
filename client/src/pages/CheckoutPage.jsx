@@ -249,7 +249,16 @@ const CheckoutPage = () => {
         const result = await response.json();
         console.log('Order API response:', result);
         if (response.ok && result.success) {
-          navigate("/order-confirmation", { state: { orderId: result.data?._id } });
+          // Clear the cart after order
+          await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          // Pass full order data to confirmation page
+          navigate("/order-confirmation", { state: { order: result.data } });
         } else {
           toast.error(result.message || 'Failed to place order');
         }
