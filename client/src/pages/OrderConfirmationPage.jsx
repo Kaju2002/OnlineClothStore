@@ -1,40 +1,25 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { CheckCircle, Package, Clock, Phone, MapPin } from "lucide-react";
 import { Button } from "../ui/button";
 
 const OrderConfirmationPage = () => {
   const navigate = useNavigate();
 
-  // Mock order data - in real app, this would come from state/props/API
-  const orderData = {
-    orderNumber: "ORD-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
-    orderDate: new Date().toLocaleDateString(),
-    expectedDelivery: "Aug 02, 2024 at 16:00",
-    totalAmount: 162.98,
-    items: [
-      {
-        id: 1,
-        name: "Fashionee - cotton shirt (S)",
-        price: 35.99,
-        quantity: 1,
-        image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=80&h=80&fit=crop"
-      },
-      {
-        id: 2,
-        name: "Spray wrap skirt",
-        price: 110.99,
-        quantity: 1,
-        image: "https://images.unsplash.com/photo-1583496661160-fb5886a13fe7?w=80&h=80&fit=crop"
-      }
-    ],
-    customer: {
-      name: "Customer Name",
-      phone: "+1 (555) 123-4567",
-      email: "customer@example.com",
-      address: "123 Main Street, City, State 12345"
-    }
-  };
+  // Get order data from location state
+  const location = useLocation();
+  const orderData = location.state?.order;
+
+  if (!orderData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">No order data found</h2>
+          <Button onClick={() => navigate("/")}>Go Home</Button>
+        </div>
+      </div>
+    );
+  }
 
   const handleContinueShopping = () => {
     navigate("/");
@@ -93,81 +78,20 @@ const OrderConfirmationPage = () => {
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span 
-                    style={{ 
-                      color: 'rgb(119, 119, 119)',
-                      font: '16px / 24px Raleway, sans-serif'
-                    }}
-                  >
-                    Order Number:
-                  </span>
-                  <span 
-                    className="font-semibold"
-                    style={{ 
-                      color: 'rgb(0, 0, 0)',
-                      font: '16px / 24px Raleway, sans-serif'
-                    }}
-                  >
-                    {orderData.orderNumber}
-                  </span>
+                  <span style={{ color: 'rgb(119, 119, 119)', font: '16px / 24px Raleway, sans-serif' }}>Order Number:</span>
+                  <span className="font-semibold" style={{ color: 'rgb(0, 0, 0)', font: '16px / 24px Raleway, sans-serif' }}>{orderData.orderNumber || orderData._id || '-'}</span>
                 </div>
-                
                 <div className="flex items-center justify-between">
-                  <span 
-                    style={{ 
-                      color: 'rgb(119, 119, 119)',
-                      font: '16px / 24px Raleway, sans-serif'
-                    }}
-                  >
-                    Order Date:
-                  </span>
-                  <span 
-                    style={{ 
-                      color: 'rgb(0, 0, 0)',
-                      font: '16px / 24px Raleway, sans-serif'
-                    }}
-                  >
-                    {orderData.orderDate}
-                  </span>
+                  <span style={{ color: 'rgb(119, 119, 119)', font: '16px / 24px Raleway, sans-serif' }}>Order Date:</span>
+                  <span style={{ color: 'rgb(0, 0, 0)', font: '16px / 24px Raleway, sans-serif' }}>{orderData.orderDate ? orderData.orderDate : (orderData.createdAt ? new Date(orderData.createdAt).toLocaleDateString() : '-')}</span>
                 </div>
-                
                 <div className="flex items-center justify-between">
-                  <span 
-                    style={{ 
-                      color: 'rgb(119, 119, 119)',
-                      font: '16px / 24px Raleway, sans-serif'
-                    }}
-                  >
-                    Payment Method:
-                  </span>
-                  <span 
-                    style={{ 
-                      color: 'rgb(0, 0, 0)',
-                      font: '16px / 24px Raleway, sans-serif'
-                    }}
-                  >
-                    Cash on Delivery
-                  </span>
+                  <span style={{ color: 'rgb(119, 119, 119)', font: '16px / 24px Raleway, sans-serif' }}>Payment Method:</span>
+                  <span style={{ color: 'rgb(0, 0, 0)', font: '16px / 24px Raleway, sans-serif' }}>{orderData.paymentMethod ? orderData.paymentMethod.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Cash on Delivery'}</span>
                 </div>
-                
                 <div className="flex items-center justify-between">
-                  <span 
-                    style={{ 
-                      color: 'rgb(119, 119, 119)',
-                      font: '16px / 24px Raleway, sans-serif'
-                    }}
-                  >
-                    Total Amount:
-                  </span>
-                  <span 
-                    className="font-bold text-lg"
-                    style={{ 
-                      color: 'rgb(0, 0, 0)',
-                      font: '18px / 24px Raleway, sans-serif'
-                    }}
-                  >
-                    ${orderData.totalAmount}
-                  </span>
+                  <span style={{ color: 'rgb(119, 119, 119)', font: '16px / 24px Raleway, sans-serif' }}>Total Amount:</span>
+                  <span className="font-bold text-lg" style={{ color: 'rgb(0, 0, 0)', font: '18px / 24px Raleway, sans-serif' }}>{orderData.totalAmount ? `LKR ${orderData.totalAmount.toFixed(2)}` : '-'}</span>
                 </div>
               </div>
             </div>
@@ -193,7 +117,13 @@ const OrderConfirmationPage = () => {
                   font: '18px / 24px Raleway, sans-serif'
                 }}
               >
-                {orderData.expectedDelivery}
+                {(() => {
+                  // Get order date
+                  let orderDate = orderData.orderDate ? new Date(orderData.orderDate) : (orderData.createdAt ? new Date(orderData.createdAt) : new Date());
+                  let deliveryDate = new Date(orderDate);
+                  deliveryDate.setDate(orderDate.getDate() + 3);
+                  return deliveryDate.toLocaleDateString();
+                })()}
               </p>
               
               <div className="flex items-start mt-4">
@@ -204,7 +134,9 @@ const OrderConfirmationPage = () => {
                     font: '14px / 20px Raleway, sans-serif'
                   }}
                 >
-                  {orderData.customer.address}
+                  {orderData.deliveryAddress
+                    ? `${orderData.deliveryAddress.street}, ${orderData.deliveryAddress.city}, ${orderData.deliveryAddress.state} ${orderData.deliveryAddress.zipCode}, ${orderData.deliveryAddress.country}`
+                    : (orderData.customer?.address || '-')}
                 </p>
               </div>
             </div>
@@ -263,41 +195,26 @@ const OrderConfirmationPage = () => {
               </h3>
               
               <div className="space-y-6">
-                {orderData.items.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-4">
+                {(orderData.items || orderData.orderItems || []).map((item, idx) => (
+                  <div key={item.id || item._id || idx} className="flex items-center gap-4 bg-white p-4 rounded  mb-4">
                     <img
-                      src={item.image}
-                      alt={item.name}
+                      src={item.image || item.product?.mainImage?.url || item.product?.images?.[0] || ''}
+                      alt={item.name || item.product?.name || ''}
                       className="w-16 h-16 object-cover rounded"
                     />
-                    <div className="flex-1">
-                      <h4 
-                        className="mb-1"
-                        style={{ 
-                          color: 'rgb(0, 0, 0)',
-                          font: '16px / 20px Raleway, sans-serif'
-                        }}
-                      >
-                        {item.name}
-                      </h4>
-                      <p 
-                        style={{ 
-                          color: 'rgb(119, 119, 119)',
-                          font: '14px / 18px Raleway, sans-serif'
-                        }}
-                      >
-                        Quantity: {item.quantity}
-                      </p>
+                    <div className="flex-1 flex flex-col justify-center">
+                      <div className="flex items-center justify-between">
+                        <h4 className="mb-1 font-medium text-lg text-black" style={{ font: '16px / 20px Raleway, sans-serif' }}>{item.name || item.product?.name || ''}{item.variant?.size ? ` (${item.variant.size})` : ''}</h4>
+                        <span className="font-bold text-xl text-black" style={{ font: '20px / 24px Raleway, sans-serif' }}>
+                          {typeof item.price === 'number' && !isNaN(item.price)
+                            ? `LKR ${item.price.toFixed(2)}`
+                            : (item.unitPrice ? `LKR ${item.unitPrice.toFixed(2)}` : (item.product?.price ? `LKR ${item.product.price.toFixed(2)}` : '-'))}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-gray-500 text-base" style={{ font: '14px / 18px Raleway, sans-serif' }}>Quantity: {item.quantity}</p>
+                      </div>
                     </div>
-                    <span 
-                      className="font-semibold"
-                      style={{ 
-                        color: 'rgb(0, 0, 0)',
-                        font: '16px / 20px Raleway, sans-serif'
-                      }}
-                    >
-                      ${item.price}
-                    </span>
                   </div>
                 ))}
               </div>
@@ -313,15 +230,7 @@ const OrderConfirmationPage = () => {
                   >
                     Total Amount
                   </span>
-                  <span 
-                    className="font-bold text-xl"
-                    style={{ 
-                      color: 'rgb(0, 0, 0)',
-                      font: '24px / 30px Raleway, sans-serif'
-                    }}
-                  >
-                    ${orderData.totalAmount}
-                  </span>
+                  <span className="font-bold text-xl" style={{ color: 'rgb(0, 0, 0)', font: '24px / 30px Raleway, sans-serif' }}>{orderData.totalAmount ? `LKR ${orderData.totalAmount.toFixed(2)}` : '-'}</span>
                 </div>
               </div>
             </div>
