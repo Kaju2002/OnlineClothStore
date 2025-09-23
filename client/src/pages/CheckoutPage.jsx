@@ -24,7 +24,12 @@ const CheckoutPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [promoCode, setPromoCode] = useState("");
+  const [activeDiscounts, setActiveDiscounts] = useState([]);
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [selectedDiscount, setSelectedDiscount] = useState("");
+  const [isFirstPurchase, setIsFirstPurchase] = useState(false);
+  const [discountError, setDiscountError] = useState("");
   
   // Payment and shipping information state
   // Checkout form state matching required JSON structure
@@ -37,7 +42,7 @@ const CheckoutPage = () => {
     phone: ""
   });
  
-  const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
+  // const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
   const [discountCode, setDiscountCode] = useState("");
   const [notes, setNotes] = useState("");
   
@@ -49,7 +54,47 @@ const CheckoutPage = () => {
   // Fetch cart data from API
   useEffect(() => {
     fetchCartData();
+    fetchActiveDiscounts();
+    checkFirstPurchase();
   }, []);
+
+  // Fetch active discounts from API
+  const fetchActiveDiscounts = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/discounts/active`);
+      const result = await response.json();
+      if (result.success) {
+        setActiveDiscounts(result.data);
+      }
+  } catch (_) {}
+  };
+
+  // Check if user is first-time purchaser
+  const checkFirstPurchase = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) return;
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders/my`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+      const result = await response.json();
+      setIsFirstPurchase(result.success && result.data.length === 0);
+  } catch (_) {
+      setIsFirstPurchase(false);
+    }
+  };
+
+  // Handle discount selection
+  const handleDiscountSelect = (code) => {
+    setSelectedDiscount(code);
+    setDiscountCode(code);
+    setDiscountError("");
+  };
+
 
   const fetchCartData = async () => {
     try {
@@ -169,13 +214,43 @@ const CheckoutPage = () => {
   // Use API data for calculations if available, otherwise fallback to local calculation
   const subtotal = cartData?.subtotal || cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const delivery = cartData?.deliveryCost || 16;
-  const total = cartData?.totalAmount || (subtotal + delivery);
 
   const handlePromoSubmit = (e) => {
     e.preventDefault();
-    // Handle promo code logic here
-    console.log("Promo code:", promoCode);
+    if (!selectedDiscount) {
+      setDiscountError("Please select a discount code.");
+      return;
+    }
+    // Find selected discount object
+    const discountObj = activeDiscounts.find(d => d.code === selectedDiscount);
+    if (!discountObj) {
+      setDiscountError("Invalid discount code.");
+      return;
+    }
+    // Calculate discount
+    let discount = 0;
+    if (discountObj.type === "percentage") {
+      discount = Math.floor((subtotal * discountObj.value) / 100);
+      if (discountObj.maximumDiscountAmount) {
+        discount = Math.min(discount, discountObj.maximumDiscountAmount);
+      }
+    } else if (discountObj.type === "fixed") {
+      discount = discountObj.value;
+      if (discountObj.maximumDiscountAmount) {
+        discount = Math.min(discount, discountObj.maximumDiscountAmount);
+      }
+    }
+    // Check minimum order amount
+    if (discountObj.minimumOrderAmount && subtotal < discountObj.minimumOrderAmount) {
+      setDiscountError(`Minimum order amount for this code is ${discountObj.minimumOrderAmount}`);
+      return;
+    }
+    setAppliedDiscount(discountObj);
+    setDiscountAmount(discount);
+    setDiscountError("");
+    toast.success(`Promo code "${selectedDiscount}" applied!`);
   };
+  const total = (cartData?.totalAmount || (subtotal + delivery)) - discountAmount;
 
 
 
@@ -232,7 +307,7 @@ const CheckoutPage = () => {
         billingAddress: {
           ...deliveryAddress
         },
-        paymentMethod,
+  paymentMethod: "cash_on_delivery",
         discountCode,
         notes
       };
@@ -262,7 +337,7 @@ const CheckoutPage = () => {
         } else {
           toast.error(result.message || 'Failed to place order');
         }
-      } catch (error) {
+  } catch (_) {
         toast.error('Failed to place order');
       }
     }
@@ -336,16 +411,11 @@ const CheckoutPage = () => {
                   </div>
                 ) : cartItems.length === 0 ? (
                   <div className="text-center py-12">
-                    <h3 className="text-xl font-semibold mb-4">Your cart is empty</h3>
-                    <p className="text-gray-600 mb-6">Looks like you haven't added any items to your cart yet.</p>
-                    <Button onClick={continueShopping} className="bg-black text-white hover:bg-gray-800">
-                      Continue Shopping
-                    </Button>
+                    <p className="text-gray-600">Your cart is empty.</p>
                   </div>
                 ) : (
                   <>
-                    {/* Cart Items List */}
-                    <div className="space-y-6">
+                    <div>
                       {cartItems.map((item, index) => (
                         <div key={item.id}>
                           <div className="flex items-center space-x-6 py-6">
@@ -357,7 +427,6 @@ const CheckoutPage = () => {
                                 className="w-24 h-24 object-cover rounded"
                               />
                             </div>
-
                             {/* Product Details */}
                             <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-start mb-4">
@@ -369,19 +438,22 @@ const CheckoutPage = () => {
                                   <Trash2 className="w-5 h-5" />
                                 </button>
                               </div>
-
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-3">
                                   {item.originalPrice && (
                                     <span className="line-through text-gray-500">
-                                      ${item.originalPrice}
+                                      {cartData?.currency === 'LKR' ? 'Rs.' : '$'}{item.originalPrice}
                                     </span>
                                   )}
                                   <span className="font-semibold text-lg">
-                                    ${item.price}
+                                    {/* Show price per item from unitPrice if available */}
+                                    {typeof item.unitPrice === 'number' && !isNaN(item.unitPrice)
+                                      ? `${cartData?.currency === 'LKR' ? 'Rs.' : '$'}${item.unitPrice.toFixed(2)}`
+                                      : (typeof item.price === 'number' && !isNaN(item.price)
+                                        ? `${cartData?.currency === 'LKR' ? 'Rs.' : '$'}${item.price.toFixed(2)}`
+                                        : '-')}
                                   </span>
                                 </div>
-
                                 {/* Quantity Controls and Total */}
                                 <div className="flex items-center space-x-8">
                                   <div className="flex items-center space-x-3">
@@ -401,15 +473,16 @@ const CheckoutPage = () => {
                                       <Plus className="w-4 h-4" />
                                     </button>
                                   </div>
-
                                   <span className="font-semibold min-w-[80px] text-right text-lg">
-                                    {formatCurrency(item.price * item.quantity, cartData?.currency)}
+                                    {/* Show total price for this line from totalPrice if available */}
+                                    {typeof item.totalPrice === 'number' && !isNaN(item.totalPrice)
+                                      ? `${cartData?.currency === 'LKR' ? 'Rs.' : '$'}${item.totalPrice.toFixed(2)}`
+                                      : formatCurrency((item.unitPrice || item.price) * item.quantity, cartData?.currency)}
                                   </span>
                                 </div>
                               </div>
                             </div>
                           </div>
-
                           {/* Divider Line */}
                           {index < cartItems.length - 1 && (
                             <hr className="border-gray-300" />
@@ -417,27 +490,59 @@ const CheckoutPage = () => {
                         </div>
                       ))}
                     </div>
-
                     {/* Promo Code Section */}
                     <div className="py-6 border-t">
                       <h3 className="text-xl font-semibold mb-4">Promo Code</h3>
                       <p className="text-gray-600 mb-6">
-                        Enter your promo code to get discount on your order.
+                        Select a promo code to get a discount on your order.
                       </p>
-
-                      <form onSubmit={handlePromoSubmit} className="flex space-x-0">
-                        <input
-                          type="text"
-                          value={promoCode}
-                          onChange={(e) => setPromoCode(e.target.value)}
-                          placeholder="Enter promo code"
-                          className="flex-1 px-4 py-3 border border-gray-300 border-r-0 focus:outline-none focus:border-black bg-gray-50"
-                        />
+                      <div className="space-y-4">
+                        {activeDiscounts.length === 0 ? (
+                          <div className="text-gray-500">Loading available discounts...</div>
+                        ) : (
+                          <div className="flex flex-col space-y-3">
+                            {activeDiscounts.map((discount) => {
+                              const isWelcome = discount.code === "WELCOME10";
+                              const isDisabled = isWelcome && !isFirstPurchase;
+                              return (
+                                <button
+                                  key={discount.code}
+                                  type="button"
+                                  onClick={() => !isDisabled && handleDiscountSelect(discount.code)}
+                                  disabled={isDisabled}
+                                  className={`flex items-center justify-between px-4 py-3 border rounded transition-colors
+                                    ${selectedDiscount === discount.code ? "border-black bg-gray-100" : "border-gray-300 bg-white"}
+                                    ${isDisabled ? "opacity-50 cursor-not-allowed" : "hover:border-black"}
+                                  `}
+                                >
+                                  <div>
+                                    <span className="font-semibold">{discount.code}</span>
+                                    <span className="ml-2 text-gray-600">{discount.name}</span>
+                                    <span className="ml-2 text-orange-500">{discount.displayValue}</span>
+                                    <span className="ml-2 text-gray-400 text-xs">{discount.description}</span>
+                                  </div>
+                                  {isDisabled && (
+                                    <span className="text-xs text-gray-500 ml-4">Already used</span>
+                                  )}
+                                  {selectedDiscount === discount.code && (
+                                    <span className="ml-4 text-green-600 font-bold">✓</span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                      {discountError && (
+                        <div className="text-red-500 text-sm mt-2">{discountError}</div>
+                      )}
+                      <form onSubmit={handlePromoSubmit} className="mt-4">
                         <Button
                           type="submit"
                           className="bg-black text-white hover:bg-gray-800 px-6 py-3 border border-black"
+                          disabled={!selectedDiscount}
                         >
-                          Apply
+                          Apply Promo Code
                         </Button>
                       </form>
                     </div>
@@ -674,75 +779,34 @@ const CheckoutPage = () => {
               <div className="space-y-6 mb-8">
                 {/* Order Price */}
                 <div className="flex justify-between items-center">
-                  <span
-                    style={{
-                      color: "rgb(119, 119, 119)",
-                      font: "16px / 24px Raleway, sans-serif",
-                    }}
-                  >
-                    Order price
-                  </span>
-                  <span
-                    style={{
-                      color: "rgb(0, 0, 0)",
-                      font: "16px / 24px Raleway, sans-serif",
-                    }}
-                  >
-                    {formatCurrency(subtotal, cartData?.currency)}
-                  </span>
+                  <span style={{ color: "rgb(119, 119, 119)", font: "16px / 24px Raleway, sans-serif" }}>Order price</span>
+                  <span style={{ color: "rgb(0, 0, 0)", font: "16px / 24px Raleway, sans-serif" }}>{formatCurrency(subtotal, cartData?.currency)}</span>
                 </div>
 
                 {/* Discount */}
                 <div className="flex justify-between items-center">
-                  <span
-                    style={{
-                      color: "rgb(119, 119, 119)",
-                      font: "16px / 24px Raleway, sans-serif",
-                    }}
-                  >
-                    Discount for promo code
-                  </span>
-                  <span
-                    style={{
-                      color: "rgb(119, 119, 119)",
-                      font: "16px / 24px Raleway, sans-serif",
-                    }}
-                  >
-                    No
+                  <span style={{ color: "rgb(119, 119, 119)", font: "16px / 24px Raleway, sans-serif" }}>Discount for promo code</span>
+                  <span style={{ color: discountAmount > 0 ? "rgb(0, 128, 0)" : "rgb(119, 119, 119)", font: "16px / 24px Raleway, sans-serif" }}>
+                    {discountAmount > 0 ? `- ${formatCurrency(discountAmount, cartData?.currency)}` : "No"}
                   </span>
                 </div>
 
                 {/* Delivery */}
                 <div className="flex justify-between items-center">
-                  <span
-                    style={{
-                      color: "rgb(119, 119, 119)",
-                      font: "16px / 24px Raleway, sans-serif",
-                    }}
-                  >
-                    Delivery <span className="text-sm">(Aug 02 at 16:00)</span>
-                  </span>
-                  <span
-                    style={{
-                      color: "rgb(0, 0, 0)",
-                      font: "16px / 24px Raleway, sans-serif",
-                    }}
-                  >
-                    {formatCurrency(delivery, cartData?.currency)}
-                  </span>
+                  <span style={{ color: "rgb(119, 119, 119)", font: "16px / 24px Raleway, sans-serif" }}>Delivery <span className="text-sm">(Aug 02 at 16:00)</span></span>
+                  <span style={{ color: "rgb(0, 0, 0)", font: "16px / 24px Raleway, sans-serif" }}>{formatCurrency(delivery, cartData?.currency)}</span>
                 </div>
               </div>
 
               {/* Total */}
               <div className="border-t border-gray-300 pt-6 mb-8">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-lg">
-                    Total
-                  </span>
-                  <span className="font-bold text-2xl">
-                    {formatCurrency(total, cartData?.currency)}
-                  </span>
+                  <span className="font-semibold text-lg">Total</span>
+                  <span className="font-bold text-2xl text-black">{formatCurrency(total, cartData?.currency)}</span>
                 </div>
+                {discountAmount > 0 && appliedDiscount && (
+                  <div className="text-xs text-green-700 mt-2">Promo code <span className="font-bold">{appliedDiscount.code}</span> applied: <span className="font-bold">-{formatCurrency(discountAmount, cartData?.currency)}</span></div>
+                )}
               </div>
 
               {/* Navigation Buttons */}
