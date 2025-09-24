@@ -34,7 +34,7 @@ const OrderDetailsPage = () => {
     dontCallMe: false,
   });
 
-  const [currentStep, setCurrentStep] = useState(1);
+  // const [currentStep, setCurrentStep] = useState(1);
 
   const cartItems = checkoutData?.cartItems || [];
   const orderPrice = checkoutData?.subtotal || 0;

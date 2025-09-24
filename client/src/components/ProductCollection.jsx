@@ -67,6 +67,7 @@ const ProductCollection = () => {
         }
       } catch (error) {
         setProducts([]);
+        console.error('Error fetching products:', error);
       } finally {
         setLoading(false);
       }
