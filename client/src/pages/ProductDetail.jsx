@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+const lkr = new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' });
 import { useParams } from 'react-router-dom';
 import { Heart, Star, Plus, Minus } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -295,11 +296,13 @@ const ProductDetail = () => {
 
           <div className="flex items-center space-x-4">
             <span className="text-3xl font-bold text-gray-900">
-              ${selectedVariant?.price?.sale ? selectedVariant.price.sale.toFixed(2) : selectedVariant?.price?.regular?.toFixed(2) || '0.00'}
+              {selectedVariant?.price?.sale
+                ? lkr.format(selectedVariant.price.sale)
+                : lkr.format(selectedVariant?.price?.regular || 0)}
             </span>
             {selectedVariant?.price?.sale && selectedVariant?.price?.regular && selectedVariant.price.sale < selectedVariant.price.regular && (
               <span className="text-lg text-gray-500 line-through">
-                ${selectedVariant.price.regular.toFixed(2)}
+                {lkr.format(selectedVariant.price.regular)}
               </span>
             )}
           </div>

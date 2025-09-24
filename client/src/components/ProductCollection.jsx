@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+const lkr = new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' });
 import { Button } from '../ui/button';
 import { Slider } from '../ui/Slider';
 import { Heart, Search, Star } from 'lucide-react';
@@ -13,54 +14,66 @@ const ProductCollection = () => {
 
   // Fetch categories
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/categories`);
-        const data = await response.json();
-        
-        if (data.success && data.data) {
-          setCategories(data.data);
-        }
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        setCategories([]);
-      }
-    };
-
-    fetchCategories();
+    // Categories will be extracted from products response
+    // So this effect is not needed
   }, []);
 
   // Fetch products from API with category filter
   useEffect(() => {
-    const fetchProducts = async () => {
+    // Always fetch all products to get all categories
+    const fetchAllProducts = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products`);
+        const data = await response.json();
+        if (data.success && data.data && data.data.products) {
+          // Extract all unique categories from all products
+          const uniqueCategories = [];
+          const seen = new Set();
+          data.data.products.forEach(product => {
+            if (product.category && product.category._id && !seen.has(product.category._id)) {
+              uniqueCategories.push(product.category);
+              seen.add(product.category._id);
+            }
+          });
+          // Ensure 'Men' category is always present
+          const hasMen = uniqueCategories.some(cat => cat.name && cat.name.toLowerCase() === 'men');
+          if (!hasMen) {
+            uniqueCategories.push({ _id: 'men-fallback', name: "Men's", status: "Active" });
+          }
+          setCategories(uniqueCategories);
+        } else {
+          setCategories([]);
+        }
+      } catch (error) {
+        setCategories([]);
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    // Fetch filtered products
+    const fetchFilteredProducts = async () => {
       try {
         setLoading(true);
-        
-        // Build URL with category filter if selected
         let url = `${import.meta.env.VITE_API_BASE_URL}/api/products`;
         if (selectedCategory) {
           url += `?category=${selectedCategory}`;
         }
-        
         const response = await fetch(url);
         const data = await response.json();
-        
-        // Handle API response structure
         if (data.success && data.data && data.data.products) {
           setProducts(data.data.products);
         } else {
-          console.error('Unexpected API response structure:', data);
           setProducts([]);
         }
       } catch (error) {
-        console.error('Error fetching products:', error);
         setProducts([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchAllProducts();
+    fetchFilteredProducts();
   }, [selectedCategory]);
 
   // Handle category selection
@@ -184,48 +197,33 @@ const ProductCollection = () => {
           <div className="mb-8">
             <h3 className="font-semibold text-lg mb-4 border-b-2 border-primary inline-block pb-1">Categories</h3>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input 
-                    type="radio" 
-                    name="category"
-                    value=""
-                    checked={selectedCategory === ''}
-                    onChange={(e) => handleCategoryChange(e.target.value)}
-                    className="rounded" 
-                  />
-                  <span className="text-sm">All</span>
-                </label>
-                <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">HOT</span>
-              </div>
-              {categories.length > 0 ? categories.map((category) => (
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input 
+                  type="radio" 
+                  name="category"
+                  value=""
+                  checked={selectedCategory === ''}
+                  onChange={() => handleCategoryChange('')}
+                  className="rounded" 
+                />
+                <span className="text-sm font-medium">All</span>
+              </label>
+              {categories.map((category) => (
                 <label key={category._id} className="flex items-center space-x-2 cursor-pointer">
                   <input 
                     type="radio" 
                     name="category"
                     value={category._id}
                     checked={selectedCategory === category._id}
-                    onChange={(e) => handleCategoryChange(e.target.value)}
+                    onChange={() => handleCategoryChange(category._id)}
                     className="rounded" 
                   />
-                  <span className="text-sm">{category.name}</span>
+                  <span className="text-sm font-medium">{category.name}</span>
+                  {selectedCategory === category._id && (
+                    <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded ml-1">Active</span>
+                  )}
                 </label>
-              )) : (
-                // Fallback static categories while loading
-                ['Women', 'Men', 'Kids', 'New Arrivals'].map((category) => (
-                  <label key={category} className="flex items-center space-x-2 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="category"
-                      value={category.toLowerCase()}
-                      checked={selectedCategory === category.toLowerCase()}
-                      onChange={(e) => handleCategoryChange(e.target.value)}
-                      className="rounded" 
-                    />
-                    <span className="text-sm">{category}</span>
-                  </label>
-                ))
-              )}
+              ))}
             </div>
           </div>
 
@@ -241,8 +239,8 @@ const ProductCollection = () => {
                 className="w-full"
               />
               <div className="flex justify-between text-sm text-muted-foreground">
-                <span>${priceRange[0]}</span>
-                <span>${priceRange[1]}</span>
+                <span>{lkr.format(priceRange[0])}</span>
+                <span>{lkr.format(priceRange[1])}</span>
               </div>
             </div>
           </div>
@@ -415,11 +413,11 @@ const ProductCollection = () => {
                       <div className="flex justify-center items-center space-x-2">
                         {hasDiscount ? (
                           <>
-                            <span className="font-semibold text-black">${(salePrice / 100).toFixed(2)}</span>
-                            <span className="text-sm text-gray-500 line-through">${(regularPrice / 100).toFixed(2)}</span>
+                            <span className="font-semibold text-black">{lkr.format(salePrice)}</span>
+                            <span className="text-sm text-gray-500 line-through">{lkr.format(regularPrice)}</span>
                           </>
                         ) : (
-                          <span className="font-semibold text-black">${(regularPrice / 100).toFixed(2)}</span>
+                          <span className="font-semibold text-black">{lkr.format(regularPrice)}</span>
                         )}
                       </div>
                       {product.averageRating && (
