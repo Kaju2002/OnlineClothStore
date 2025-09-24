@@ -3,11 +3,10 @@ import { Eye, EyeOff, CheckCircle, Lock } from 'lucide-react';
 
 const SetNewPasswordPage = () => {
   const [formData, setFormData] = useState({
+    currentPassword: "",
     password: "",
     confirmPassword: ""
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -42,21 +41,53 @@ const SetNewPasswordPage = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
 
     // Validation
+    if (!formData.currentPassword) {
+      newErrors.currentPassword = "Current password is required";
+    }
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (!isPasswordStrong) {
       newErrors.password = "Password doesn't meet requirements";
     }
-
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Please confirm your password";
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords don't match";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    // Call change-password API
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/change-password`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          currentPassword: formData.currentPassword,
+          newPassword: formData.password
+        })
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setIsSuccess(true);
+        setErrors({});
+      } else {
+        setErrors({ password: result.message || 'Failed to change password' });
+      }
+    } catch (err) {
+      setErrors({ password: 'Network error. Please try again.' },err);
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -69,10 +100,6 @@ const SetNewPasswordPage = () => {
     setIsSuccess(true);
   };
 
-  const handleLoginRedirect = () => {
-    // Navigate to login page
-    console.log("Navigate to login page");
-  };
 
   return (
     <div className="min-h-screen">
@@ -80,15 +107,6 @@ const SetNewPasswordPage = () => {
       <div className="min-h-screen flex">
         <div className="w-1/2 flex flex-col justify-center px-16 bg-white">
           <div className="max-w-md">
-            <h1 
-              className="mb-8 text-black"
-              style={{ 
-                font: '400 48px / 54px "Josefin Sans", sans-serif'
-              }}
-            >
-              New Password
-            </h1>
-            
             {/* Breadcrumb navigation */}
             <div className="flex items-center space-x-2 text-gray-600 mb-4">
               <a 
@@ -119,7 +137,6 @@ const SetNewPasswordPage = () => {
                 Set New Password
               </span>
             </div>
-            
             {/* Horizontal line separator */}
             <div className="w-16 h-1 bg-red-500 mb-16"></div>
           </div>
@@ -139,11 +156,11 @@ const SetNewPasswordPage = () => {
       <div className="bg-white">
         <div className="container mx-auto px-4 py-12 max-w-6xl">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            {/* Left Side - Set New Password Form */}
+            {/* Left Side - Set New Password Form (only one form: current, new, confirm) */}
             <div className="lg:col-span-8">
               <div className="max-w-2xl">
                 {!isSuccess ? (
-                  <>
+                  <form onSubmit={handleSubmit} className="space-y-8">
                     <h2 
                       className="mb-6"
                       style={{ 
@@ -151,139 +168,53 @@ const SetNewPasswordPage = () => {
                         font: '400 36px / 42px "Josefin Sans", sans-serif'
                       }}
                     >
-                      Create New Password
+                      Update Password
                     </h2>
-
-                    <p 
-                      className="mb-8"
-                      style={{ 
-                        color: 'rgb(119, 119, 119)',
-                        font: '16px / 24px Raleway, sans-serif'
-                      }}
-                    >
-                      Your new password must be different from previously used passwords.
-                    </p>
-
-                    {/* Set New Password form */}
-                    <form onSubmit={handleSubmit} className="space-y-8">
-                      {/* New Password Field */}
-                      <div>
-                        <div className="relative">
-                          <Lock className="absolute left-0 top-4 w-5 h-5 text-gray-400" />
-                          <input
-                            type={showPassword ? "text" : "password"}
-                            name="password"
-                            value={formData.password}
-                            onChange={handleInputChange}
-                            placeholder="Enter new password"
-                            className={`w-full pl-8 pr-12 py-4 border-0 border-b bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none transition-colors ${
-                              errors.password ? 'border-red-500' : 'border-gray-300 focus:border-black'
-                            }`}
-                            style={{ font: '16px / 24px Raleway, sans-serif' }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-0 top-4 text-gray-400 hover:text-gray-600"
-                          >
-                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                          </button>
-                        </div>
-                        {errors.password && (
-                          <p 
-                            className="mt-2"
-                            style={{ 
-                              color: 'rgb(239, 68, 68)',
-                              font: '14px / 20px Raleway, sans-serif'
-                            }}
-                          >
-                            {errors.password}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Confirm Password Field */}
-                      <div>
-                        <div className="relative">
-                          <Lock className="absolute left-0 top-4 w-5 h-5 text-gray-400" />
-                          <input
-                            type={showConfirmPassword ? "text" : "password"}
-                            name="confirmPassword"
-                            value={formData.confirmPassword}
-                            onChange={handleInputChange}
-                            placeholder="Confirm new password"
-                            className={`w-full pl-8 pr-12 py-4 border-0 border-b bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none transition-colors ${
-                              errors.confirmPassword ? 'border-red-500' : 'border-gray-300 focus:border-black'
-                            }`}
-                            style={{ font: '16px / 24px Raleway, sans-serif' }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute right-0 top-4 text-gray-400 hover:text-gray-600"
-                          >
-                            {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                          </button>
-                        </div>
-                        {errors.confirmPassword && (
-                          <p 
-                            className="mt-2"
-                            style={{ 
-                              color: 'rgb(239, 68, 68)',
-                              font: '14px / 20px Raleway, sans-serif'
-                            }}
-                          >
-                            {errors.confirmPassword}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="pt-4">
-                        <button
-                          type="submit"
-                          disabled={!isPasswordStrong || formData.password !== formData.confirmPassword}
-                          className="bg-black text-white py-4 px-8 hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                          style={{ font: '600 16px / 24px Raleway, sans-serif' }}
-                        >
-                          Update Password
-                        </button>
-                      </div>
-                    </form>
-                  </>
-                ) : (
-                  // Success state
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <CheckCircle className="w-8 h-8 text-green-600" />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                      <input
+                        type="password"
+                        name="currentPassword"
+                        value={formData.currentPassword}
+                        onChange={handleInputChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${errors.currentPassword ? 'border-red-500' : 'border-gray-300'}`}
+                      />
+                      {errors.currentPassword && <p className="text-red-500 text-sm mt-1">{errors.currentPassword}</p>}
                     </div>
-                    
-                    <h2 
-                      className="mb-6"
-                      style={{ 
-                        color: 'rgb(0, 0, 0)',
-                        font: '400 36px / 42px "Josefin Sans", sans-serif'
-                      }}
-                    >
-                      Password Updated!
-                    </h2>
-
-                    <p 
-                      className="mb-8"
-                      style={{ 
-                        color: 'rgb(119, 119, 119)',
-                        font: '16px / 24px Raleway, sans-serif'
-                      }}
-                    >
-                      Your password has been successfully updated. You can now log in with your new password.
-                    </p>
-
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
+                      />
+                      {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
+                      />
+                      {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
+                    </div>
                     <button
-                      onClick={handleLoginRedirect}
-                      className="bg-black text-white py-4 px-8 hover:bg-gray-800 transition-colors"
-                      style={{ font: '600 16px / 24px Raleway, sans-serif' }}
+                      type="submit"
+                      className="w-full py-3 bg-black text-white font-semibold rounded hover:bg-gray-800 transition"
                     >
-                      Continue to Login
+                      Update Password
                     </button>
+                  </form>
+                ) : (
+                  <div className="text-center">
+                    <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Password Updated!</h3>
+                    <p className="text-gray-600 mb-6">Your password has been changed successfully.</p>
                   </div>
                 )}
               </div>
