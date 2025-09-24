@@ -119,47 +119,79 @@ const MyProfile = () => {
     <div className="space-y-8">
       <div className="bg-gray-50 p-8 rounded-lg max-w-xl mx-auto shadow">
         <div className="flex flex-col items-center mb-8">
-          <label htmlFor="avatar-upload" className="cursor-pointer relative group">
-            <img
-              src={profile.avatar?.url || window.avatarPreviewUrl || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(profile.fullName)}
-              alt={profile.fullName}
-              className="w-24 h-24 rounded-full object-cover border-4 border-black shadow-lg mb-4 group-hover:opacity-70 transition"
-            />
-            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">Change</span>
-            <input
-              id="avatar-upload"
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                // Show preview immediately
-                window.avatarPreviewUrl = URL.createObjectURL(file);
-                document.querySelector('#avatar-upload').parentElement.querySelector('img').src = window.avatarPreviewUrl;
-                const token = localStorage.getItem('authToken');
-                const formData = new FormData();
-                formData.append('avatar', file);
-                try {
-                  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/upload-avatar`, {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${token}`
-                    },
-                    body: formData
-                  });
-                  const result = await response.json();
-                  if (response.ok && result.success && result.data?.avatar?.url) {
-                    setProfile(prev => ({ ...prev, avatar: result.data.avatar }));
-                    setShowToast(true);
-                    setTimeout(() => setShowToast(false), 3000);
-                    window.avatarPreviewUrl = null;
+          <div className="relative group flex flex-col items-center">
+            <label htmlFor="avatar-upload" className="cursor-pointer">
+              <img
+                src={profile.avatar?.url || window.avatarPreviewUrl || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(profile.fullName)}
+                alt={profile.fullName}
+                className="w-24 h-24 rounded-full object-cover border-4 border-black shadow-lg mb-4 group-hover:opacity-70 transition"
+              />
+              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">Change</span>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  window.avatarPreviewUrl = URL.createObjectURL(file);
+                  document.querySelector('#avatar-upload').parentElement.querySelector('img').src = window.avatarPreviewUrl;
+                  const token = localStorage.getItem('authToken');
+                  const formData = new FormData();
+                  formData.append('avatar', file);
+                  try {
+                    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/upload-avatar`, {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: formData
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.success && result.data?.avatar?.url) {
+                      setProfile(prev => ({ ...prev, avatar: result.data.avatar }));
+                      setShowToast(true);
+                      setTimeout(() => setShowToast(false), 3000);
+                      window.avatarPreviewUrl = null;
+                    }
+                  } catch (error) {
+                    console.error("Avatar upload error:", error);}
+                }}
+              />
+            </label>
+            {profile.avatar?.url && (
+              <button
+                type="button"
+                className="absolute bottom-2 right-2 bg-white rounded-full p-0.5 shadow hover:bg-red-100 flex items-center justify-center"
+                title="Delete Image"
+                style={{ width: '28px', height: '28px' }}
+                onClick={async () => {
+                  const token = localStorage.getItem('authToken');
+                  try {
+                    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/avatar`, {
+                      method: 'DELETE',
+                      headers: {
+                        'Authorization': `Bearer ${token}`
+                      }
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                      setProfile(prev => ({ ...prev, avatar: null }));
+                      setShowToast(true);
+                      setTimeout(() => setShowToast(false), 3000);
+                    }
+                  } catch (error) {
+                    console.error("Avatar delete error:", error);
                   }
-                } catch (error) {
-                  console.error("Avatar upload error:", error);}
-              }}
-            />
-          </label>
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7m5 4v6m-4-6v6m8-6v6" />
+                </svg>
+              </button>
+            )}
+          </div>
           <h3 className="text-2xl font-bold text-black mb-1" style={{ fontFamily: 'Josefin Sans, sans-serif' }}>{profile.fullName}</h3>
           <span className="text-sm text-gray-500 mb-2" style={{ fontFamily: 'Raleway, sans-serif' }}>{profile.email}</span>
         </div>
