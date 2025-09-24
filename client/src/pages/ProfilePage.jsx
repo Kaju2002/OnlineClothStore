@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import ProductHeader from "../components/ProductHeader";
 import MyProfile from "../components/MyProfile";
 import MyOrders from "../components/MyOrders";
 
 const ProfilePage = () => {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("orders");
   const [email, setEmail] = useState("");
 
