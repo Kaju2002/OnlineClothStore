@@ -66,7 +66,9 @@ const CheckoutPage = () => {
       if (result.success) {
         setActiveDiscounts(result.data);
       }
-  } catch (_) {}
+  } catch (err) {
+      console.error('Error fetching active discounts:', err);
+  }
   };
 
   // Check if user is first-time purchaser
@@ -83,8 +85,9 @@ const CheckoutPage = () => {
       });
       const result = await response.json();
       setIsFirstPurchase(result.success && result.data.length === 0);
-  } catch (_) {
+  } catch (err) {
       setIsFirstPurchase(false);
+      console.error('Error checking first purchase:', err);
     }
   };
 
@@ -337,8 +340,8 @@ const CheckoutPage = () => {
         } else {
           toast.error(result.message || 'Failed to place order');
         }
-  } catch (_) {
-        toast.error('Failed to place order');
+  } catch (err) {
+        toast.error('Failed to place order',err);
       }
     }
   };
