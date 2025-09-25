@@ -42,7 +42,7 @@ const ProductHeader = ({
       </nav>
 
       {/* Banner Section */}
-      <div className="relative bg-gray-100 min-h-[400px] flex items-center">
+      <div className="relative  min-h-[400px] flex items-center">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             {/* Left Content */}

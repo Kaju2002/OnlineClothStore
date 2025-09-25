@@ -22,6 +22,7 @@ const CheckoutPage = () => {
   const [cartItems, setCartItems] = useState([]);
   const [cartData, setCartData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [placingOrder, setPlacingOrder] = useState(false);
   const [error, setError] = useState(null);
 
   const [activeDiscounts, setActiveDiscounts] = useState([]);
@@ -216,7 +217,7 @@ const CheckoutPage = () => {
 
   // Use API data for calculations if available, otherwise fallback to local calculation
   const subtotal = cartData?.subtotal || cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const delivery = cartData?.deliveryCost || 16;
+  const delivery = typeof cartData?.deliveryCost === 'number' ? cartData.deliveryCost : 0;
 
   const handlePromoSubmit = (e) => {
     e.preventDefault();
@@ -310,10 +311,11 @@ const CheckoutPage = () => {
         billingAddress: {
           ...deliveryAddress
         },
-  paymentMethod: "cash_on_delivery",
+        paymentMethod: "cash_on_delivery",
         discountCode,
         notes
       };
+      setPlacingOrder(true);
       try {
         const token = localStorage.getItem('authToken');
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders`, {
@@ -340,8 +342,10 @@ const CheckoutPage = () => {
         } else {
           toast.error(result.message || 'Failed to place order');
         }
-  } catch (err) {
-        toast.error('Failed to place order',err);
+      } catch (err) {
+        toast.error('Failed to place order', err);
+      } finally {
+        setPlacingOrder(false);
       }
     }
   };
@@ -874,16 +878,27 @@ const CheckoutPage = () => {
                       style={{
                         font: "600 16px / 24px Raleway, sans-serif",
                       }}
+                      disabled={placingOrder}
                     >
                       <div className="flex items-center justify-center">
-                        <Lock className="w-4 h-4 mr-2" />
-                        Place Order
+                        {placingOrder ? (
+                          <span className="mr-2">
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                          </span>
+                        ) : (
+                          <Lock className="w-4 h-4 mr-2" />
+                        )}
+                        {placingOrder ? 'Placing Order...' : 'Place Order'}
                       </div>
                     </Button>
                     <Button
                       onClick={prevStep}
                       variant="outline"
                       className="w-full py-3 border-black text-black hover:bg-gray-50"
+                      disabled={placingOrder}
                     >
                       <div className="flex items-center justify-center">
                         <ArrowLeft className="w-4 h-4 mr-2" />

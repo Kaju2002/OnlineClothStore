@@ -82,7 +82,7 @@ function useAddToCartWithNav() {
         toast.error('Failed to add item to cart: ' + (result.message || 'Unknown error'));
       }
     } catch (error) {
-      toast.error('Failed to add item to cart');
+      toast.error('Failed to add item to cart',error);
     }
   }
 }

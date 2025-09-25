@@ -17,6 +17,7 @@ import ContactPage from "./pages/ContactPage";
 import AboutPage from "./pages/AboutPage";
 import WishlistPage from "./pages/WishlistPage";
 import { ToastContainer } from 'react-toastify';
+import MyOrders from "./components/MyOrders";
 import 'react-toastify/dist/ReactToastify.css';
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/my-orders" element={<MyOrders />} />
         </Routes>
       </main>
       <Footer />
