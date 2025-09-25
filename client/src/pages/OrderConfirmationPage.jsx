@@ -26,7 +26,7 @@ const OrderConfirmationPage = () => {
   };
 
   const handleViewOrders = () => {
-    navigate("/my-orders");
+    navigate("/profile");
   };
 
   return (
@@ -238,7 +238,7 @@ const OrderConfirmationPage = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12 relative">
           <Button
             onClick={handleContinueShopping}
             variant="outline"
@@ -247,7 +247,6 @@ const OrderConfirmationPage = () => {
           >
             Continue Shopping
           </Button>
-          
           <Button
             onClick={handleViewOrders}
             className="bg-black text-white hover:bg-gray-800 px-8 py-3"
@@ -255,6 +254,7 @@ const OrderConfirmationPage = () => {
           >
             View My Orders
           </Button>
+          
         </div>
 
         {/* Additional Information */}

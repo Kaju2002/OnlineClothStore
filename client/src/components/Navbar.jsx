@@ -14,6 +14,18 @@ import {
 } from "lucide-react";
 
 const Navbar = () => {
+  // Wishlist count for badge
+  const [wishlistCount, setWishlistCount] = useState(0);
+
+  useEffect(() => {
+    const updateWishlistCount = () => {
+      const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+      setWishlistCount(wishlist.length);
+    };
+    updateWishlistCount();
+    window.addEventListener("wishlistChanged", updateWishlistCount);
+    return () => window.removeEventListener("wishlistChanged", updateWishlistCount);
+  }, []);
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -136,31 +148,6 @@ const Navbar = () => {
               </a>
             </li>
             <li className="relative group">
-              <div
-                className="relative group"
-                onMouseEnter={() => handleDropdown("pages")}
-                onMouseLeave={() => handleDropdown("")}
-              >
-                <span
-                  className="flex items-center text-sm font-medium text-gray-700 hover:text-black transition-colors duration-200 tracking-[0.05em] cursor-pointer"
-                >
-                  Explore
-                  <ChevronDown
-                    size={16}
-                    className="ml-1 transition-transform duration-200 group-hover:rotate-180"
-                  />
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-black transition-all duration-300 group-hover:w-full"></span>
-                </span>
-                {activeDropdown === "pages" && (
-                  <div className="absolute left-0 mt-2 w-40 bg-white border border-gray-100 rounded shadow-lg z-20">
-                    <Link to="/login" className="block px-4 py-2 text-gray-700 hover:bg-gray-50">Login</Link>
-                    <Link to="/register" className="block px-4 py-2 text-gray-700 hover:bg-gray-50">Registration</Link>
-                    <Link to="/about" className="block px-4 py-2 text-gray-700 hover:bg-gray-50">About Us</Link>
-                  </div>
-                )}
-              </div>
-            </li>
-            <li className="relative group">
               <a
                 href="/product"
                 className="flex items-center text-sm font-medium text-gray-700 hover:text-black transition-colors duration-200 tracking-[0.05em]"
@@ -187,6 +174,31 @@ const Navbar = () => {
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-black transition-all duration-300 group-hover:w-full"></span>
               </Link>
             </li>
+            <li className="relative group">
+              <div
+                className="relative group"
+                onMouseEnter={() => handleDropdown("pages")}
+                onMouseLeave={() => handleDropdown("")}
+              >
+                <span
+                  className="flex items-center text-sm font-medium text-gray-700 hover:text-black transition-colors duration-200 tracking-[0.05em] cursor-pointer"
+                >
+                  Explore
+                  <ChevronDown
+                    size={16}
+                    className="ml-1 transition-transform duration-200 group-hover:rotate-180"
+                  />
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-black transition-all duration-300 group-hover:w-full"></span>
+                </span>
+                {activeDropdown === "pages" && (
+                  <div className="absolute left-0 mt-2 w-40 bg-white border border-gray-100 rounded shadow-lg z-20">
+                    <Link to="/login" className="block px-4 py-2 text-gray-700 hover:bg-gray-50" onClick={() => handleDropdown("")}>Login</Link>
+                    <Link to="/register" className="block px-4 py-2 text-gray-700 hover:bg-gray-50" onClick={() => handleDropdown("")}>Registration</Link>
+                    <Link to="/about" className="block px-4 py-2 text-gray-700 hover:bg-gray-50" onClick={() => handleDropdown("")}>About Us</Link>
+                  </div>
+                )}
+              </div>
+            </li>
           </ul>
 
           {/* Action Buttons */}
@@ -203,6 +215,11 @@ const Navbar = () => {
               title="Wishlist"
             >
               <Heart size={20} strokeWidth={1.5} />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full shadow border-2 border-white animate-pulse">
+                  {wishlistCount > 9 ? '9+' : wishlistCount}
+                </span>
+              )}
             </a>
 
             {/* User Account Button */}
@@ -301,25 +318,6 @@ const Navbar = () => {
             Home
           </a>
           <div className="space-y-2">
-            <button
-              onClick={() => handleDropdown("mobile-pages")}
-              className="flex items-center justify-between w-full text-lg font-medium text-gray-700 hover:text-black transition-colors duration-200 py-2"
-            >
-              Explore
-              <ChevronDown
-                size={16}
-                className={`transition-transform duration-200 ${
-                  activeDropdown === "mobile-pages" ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-            {activeDropdown === "mobile-pages" && (
-              <div className="pl-4 space-y-2">
-                <Link to="/login" className="block text-gray-600 hover:text-black transition-colors duration-200 py-1">Login</Link>
-                <Link to="/register" className="block text-gray-600 hover:text-black transition-colors duration-200 py-1">Registration</Link>
-                <Link to="/about" className="block text-gray-600 hover:text-black transition-colors duration-200 py-1">About Us</Link>
-              </div>
-            )}
           </div>
           <div className="space-y-2">
             <a
@@ -341,6 +339,27 @@ const Navbar = () => {
           >
             Contact
           </Link>
+          <div className="space-y-2">
+            <button
+              onClick={() => handleDropdown("mobile-pages")}
+              className="flex items-center justify-between w-full text-lg font-medium text-gray-700 hover:text-black transition-colors duration-200 py-2"
+            >
+              Explore
+              <ChevronDown
+                size={16}
+                className={`transition-transform duration-200 ${
+                  activeDropdown === "mobile-pages" ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            {activeDropdown === "mobile-pages" && (
+              <div className="pl-4 space-y-2">
+                <Link to="/login" className="block text-gray-600 hover:text-black transition-colors duration-200 py-1" onClick={() => handleDropdown("")}>Login</Link>
+                <Link to="/register" className="block text-gray-600 hover:text-black transition-colors duration-200 py-1" onClick={() => handleDropdown("")}>Registration</Link>
+                <Link to="/about" className="block text-gray-600 hover:text-black transition-colors duration-200 py-1" onClick={() => handleDropdown("")}>About Us</Link>
+              </div>
+            )}
+          </div>
 
           {/* Mobile Action Buttons */}
           <div className="pt-4 border-t border-gray-100">

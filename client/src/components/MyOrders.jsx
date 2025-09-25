@@ -1,120 +1,55 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
+import { toast } from 'react-toastify';
 
 const MyOrders = () => {
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  // Pagination state
+  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1 });
+  const [showActive, setShowActive] = useState(false);
 
-  // Mock order data
-  const orders = [
-    {
-      id: "N°116299787",
-      date: "Aug 02, 2020",
-      status: "Going to you",
-      statusColor: "text-orange-500",
-      items: [
-        {
-          id: 1,
-          name: "Fashionee - cotton shirt (S)",
-          quantity: 1,
-          price: 33.99,
-          image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=80&h=80&fit=crop"
-        },
-        {
-          id: 2,
-          name: "Spray wrap skirt",
-          quantity: 1,
-          price: 110.99,
-          image: "https://images.unsplash.com/photo-1583496661160-fb5886a13fe7?w=80&h=80&fit=crop"
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          setError('Please login to view your orders.');
+          setLoading(false);
+          return;
         }
-      ],
-      total: 146.98,
-      deliveryAddress: "27 Division St, New York, NY 10002, USA"
-    },
-    {
-      id: "N°116226274",
-      date: "Jul 26, 2020",
-      status: "Delivered",
-      statusColor: "text-green-500",
-      items: [
-        {
-          id: 3,
-          name: "Summer dress",
-          quantity: 2,
-          price: 89.99,
-          image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=80&h=80&fit=crop"
+        const url = `${import.meta.env.VITE_API_BASE_URL}/api/orders/my-orders?page=${pagination.currentPage}&limit=7`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        const result = await response.json();
+        if (response.ok && result.success) {
+          setOrders(result.data);
+          if (result.pagination) {
+            setPagination({
+              currentPage: result.pagination.currentPage,
+              totalPages: result.pagination.totalPages
+            });
+          }
+        } else {
+          setError(result.message || 'Failed to fetch orders.');
         }
-      ],
-      total: 179.98,
-      deliveryAddress: "27 Division St, New York, NY 10002, USA"
-    },
-    {
-      id: "N°015423561",
-      date: "Jun 30, 2020",
-      status: "Delivered",
-      statusColor: "text-green-500",
-      items: [
-        {
-          id: 4,
-          name: "Casual blazer",
-          quantity: 1,
-          price: 129.99,
-          image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop"
-        }
-      ],
-      total: 145.99,
-      deliveryAddress: "27 Division St, New York, NY 10002, USA"
-    },
-    {
-      id: "N°116292237",
-      date: "Jun 16, 2020",
-      status: "Delivered",
-      statusColor: "text-green-500",
-      items: [
-        {
-          id: 5,
-          name: "Designer handbag",
-          quantity: 1,
-          price: 199.99,
-          image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=80&h=80&fit=crop"
-        }
-      ],
-      total: 215.99,
-      deliveryAddress: "27 Division St, New York, NY 10002, USA"
-    },
-    {
-      id: "N°116297741",
-      date: "May 28, 2020",
-      status: "Delivered",
-      statusColor: "text-green-500",
-      items: [
-        {
-          id: 6,
-          name: "Elegant evening gown",
-          quantity: 1,
-          price: 299.99,
-          image: "https://images.unsplash.com/photo-1566479179817-c0a5b1d13dd7?w=80&h=80&fit=crop"
-        }
-      ],
-      total: 315.99,
-      deliveryAddress: "27 Division St, New York, NY 10002, USA"
-    },
-    {
-      id: "N°116293364",
-      date: "May 12, 2020",
-      status: "Delivered",
-      statusColor: "text-green-500",
-      items: [
-        {
-          id: 7,
-          name: "Sports sneakers",
-          quantity: 1,
-          price: 89.99,
-          image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=80&h=80&fit=crop"
-        }
-      ],
-      total: 105.99,
-      deliveryAddress: "27 Division St, New York, NY 10002, USA"
-    }
-  ];
+      } catch (err) {
+        setError('Failed to fetch orders.',err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, [pagination.currentPage]);
 
   const toggleOrderDetails = (orderId) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
@@ -124,165 +59,347 @@ const MyOrders = () => {
     console.log("Delete order history");
   };
 
+  // Inline cancel UI state
+  const [cancelUI, setCancelUI] = useState({ orderId: null, reason: 'Changed my mind', custom: '' });
+  const cancelOptions = [
+    'Changed my mind',
+    'Found a better price',
+    'Ordered by mistake',
+    'Delivery time is too long',
+    'Other'
+  ];
+
+  const openCancelUI = (orderId) => {
+    setCancelUI({ orderId, reason: 'Changed my mind', custom: '' });
+  };
+  const closeCancelUI = () => {
+    setCancelUI({ orderId: null, reason: 'Changed my mind', custom: '' });
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    let reason = cancelUI.reason === 'Other' ? cancelUI.custom.trim() : cancelUI.reason;
+    if (!reason) {
+      toast.error('Please provide a reason for cancellation.');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}/cancel`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason })
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        toast.success(result.message || 'Order cancelled successfully');
+        setOrders((prev) => prev.map(o => o._id === orderId ? { ...o, status: 'cancelled', statusDisplay: 'Cancelled' } : o));
+        closeCancelUI();
+      } else {
+        toast.error(result.message || 'Failed to cancel order');
+      }
+    } catch (err) {
+      toast.error('Failed to cancel order',err);
+    }
+  };
+
+  // Filter for active orders (pending/assigned)
+  const filteredOrders = showActive
+    ? orders.filter(order => order.status === 'pending' || order.status === 'assigned')
+    : orders;
+
   return (
     <div className="space-y-0">
-      {orders.map((order, index) => (
-        <div key={order.id} className="border-b border-gray-200 last:border-b-0">
-          {/* Order Header */}
-          <div 
-            className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50 transition-colors"
-            onClick={() => toggleOrderDetails(order.id)}
-          >
-            <div className="flex items-center space-x-8">
-              <span 
-                className="font-medium"
-                style={{ 
-                  color: 'rgb(0, 0, 0)',
-                  font: '16px / 24px Raleway, sans-serif'
-                }}
-              >
-                {order.id}
-              </span>
-              <span 
-                style={{ 
-                  color: 'rgb(119, 119, 119)',
-                  font: '16px / 24px Raleway, sans-serif'
-                }}
-              >
-                {order.date}
-              </span>
-              <span 
-                className={`font-medium ${order.statusColor} flex items-center`}
-                style={{ font: '16px / 24px Raleway, sans-serif' }}
-              >
-                {order.status}
-                {order.status === "Going to you" && (
-                  <span className="ml-2 text-lg">🚚</span>
-                )}
-                {order.status === "Delivered" && (
-                  <img 
-                    src="https://mollee-html-ten.vercel.app/assets/img/svg/order-icon_2.svg" 
-                    alt="Delivered" 
-                    className="ml-2 w-4 h-4"
-                  />
-                )}
-              </span>
-            </div>
-            
-            <svg
-              className={`w-5 h-5 transition-transform duration-200 text-gray-400 ${
-                expandedOrder === order.id ? "rotate-180" : ""
-              }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
+      {loading ? (
+        <div className="text-center py-12 text-gray-600">Loading your orders...</div>
+      ) : error ? (
+        <div className="text-center py-12 text-red-600">{error}</div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="text-center py-12 text-gray-600">No orders found.</div>
+      ) : (
+        filteredOrders.map((order) => {
+          // Status color, label, and icon
+          let statusColor = 'text-gray-500';
+          let statusLabel = order.statusDisplay || order.status;
+          let statusIcon = null;
+          if (order.status === 'pending') {
+            statusColor = 'text-orange-500';
+            statusIcon = (
+              <svg className="ml-2 w-5 h-5 text-orange-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" className="opacity-30"/>
+                <path d="M12 7v5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="12" cy="16" r="1" fill="currentColor" />
+              </svg>
+            );
+          }
+          if (order.status === 'assigned') {
+            statusColor = 'text-blue-500';
+            statusLabel = 'Assigned';
+            statusIcon = (
+              <svg className="ml-2 w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" className="opacity-30"/>
+                <path d="M8 12h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="12" cy="16" r="1" fill="currentColor" />
+              </svg>
+            );
+          }
+          if (order.status === 'delivered') {
+            statusColor = 'text-green-500';
+            statusIcon = (
+              <img
+                src="https://mollee-html-ten.vercel.app/assets/img/svg/order-icon_2.svg"
+                alt="Delivered"
+                className="ml-2 w-4 h-4"
               />
-            </svg>
-          </div>
-
-          {/* Order Details - Expandable */}
-          {expandedOrder === order.id && (
-            <div className="px-6 pb-6 bg-gray-50">
-              <div className="pt-4 border-t border-gray-200">
-                {/* Order Items */}
-                <div className="space-y-4 mb-6">
-                  {order.items.map((item) => (
-                    <div key={item.id} className="flex items-center space-x-4">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
-                      <div className="flex-1">
-                        <h4 
-                          className="font-medium mb-1"
-                          style={{ 
+            );
+          }
+          if (order.status === 'cancelled') {
+            statusColor = 'text-red-500';
+            statusIcon = (
+              <svg className="ml-2 w-5 h-5 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" className="opacity-30"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            );
+          }
+          // Order date
+          const orderDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-';
+          return (
+            <div key={order._id || order.orderNumber} className="border-b border-gray-200 last:border-b-0">
+              {/* Order Header */}
+              <div
+                className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => toggleOrderDetails(order._id || order.orderNumber)}
+              >
+                <div className="flex items-center space-x-8">
+                  <span
+                    className="font-medium"
+                    style={{
+                      color: 'rgb(0, 0, 0)',
+                      font: '16px / 24px Raleway, sans-serif'
+                    }}
+                  >
+                    {order.orderNumber || order._id}
+                  </span>
+                  <span
+                    style={{
+                      color: 'rgb(119, 119, 119)',
+                      font: '16px / 24px Raleway, sans-serif'
+                    }}
+                  >
+                    {orderDate}
+                  </span>
+                  <span
+                    className={`font-medium ${statusColor} flex items-center`}
+                    style={{ font: '16px / 24px Raleway, sans-serif' }}
+                  >
+                    {statusLabel}
+                    {statusIcon}
+                  </span>
+                  {/* Cancel button for pending/assigned */}
+                  {(order.status === 'pending' || order.status === 'assigned') && (
+                    <div className="flex flex-col items-start">
+                      <button
+                        className="ml-4 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                        onClick={e => {
+                          e.stopPropagation();
+                          openCancelUI(order._id);
+                        }}
+                        disabled={cancelUI.orderId === order._id}
+                      >
+                        Cancel
+                      </button>
+                      {cancelUI.orderId === order._id && (
+                        <div className="mt-2 ml-4 flex flex-col gap-2 bg-gray-50 border border-gray-200 rounded p-4 w-72 shadow-lg">
+                          <span className="font-medium mb-1 text-sm">Select reason:</span>
+                          {cancelOptions.map(option => (
+                            <label key={option} className="flex items-center text-sm">
+                              <input
+                                type="radio"
+                                name={`cancelReason-${order._id}`}
+                                value={option}
+                                checked={cancelUI.reason === option}
+                                onChange={() => setCancelUI(ui => ({ ...ui, reason: option }))}
+                                className="mr-2"
+                              />
+                              {option}
+                            </label>
+                          ))}
+                          {cancelUI.reason === 'Other' && (
+                            <input
+                              type="text"
+                              className="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                              placeholder="Type your reason..."
+                              value={cancelUI.custom}
+                              onChange={e => setCancelUI(ui => ({ ...ui, custom: e.target.value }))}
+                              maxLength={100}
+                              required
+                            />
+                          )}
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              type="button"
+                              className="px-3 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm"
+                              onClick={closeCancelUI}
+                            >
+                              Close
+                            </button>
+                            <button
+                              type="button"
+                              className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600 text-sm"
+                              onClick={() => handleCancelOrder(order._id)}
+                            >
+                              Confirm Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <svg
+                  className={`w-5 h-5 transition-transform duration-200 text-gray-400 ${
+                    expandedOrder === (order._id || order.orderNumber) ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+              {/* Order Details - Expandable */}
+              {expandedOrder === (order._id || order.orderNumber) && (
+                <div className="px-6 pb-6 bg-gray-50">
+                  <div className="pt-4 border-t border-gray-200">
+                    {/* Order Items */}
+                    <div className="space-y-4 mb-6">
+                      {(order.items || order.orderItems || []).map((item, idx) => (
+                        <div key={item._id || item.product?._id || idx} className="flex items-center space-x-4">
+                          <img
+                            src={item.product?.images?.[0]?.url || item.product?.mainImage?.url || ''}
+                            alt={item.product?.name || ''}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                          <div className="flex-1">
+                            <h4
+                              className="font-medium mb-1"
+                              style={{
+                                color: 'rgb(0, 0, 0)',
+                                font: '16px / 20px Raleway, sans-serif'
+                              }}
+                            >
+                              {item.product?.name || ''} {item.variant?.size ? `(${item.variant.size})` : ''}
+                            </h4>
+                            <p
+                              style={{
+                                color: 'rgb(119, 119, 119)',
+                                font: '14px / 18px Raleway, sans-serif'
+                              }}
+                            >
+                              x{item.quantity}
+                            </p>
+                          </div>
+                          <span
+                            className="font-semibold"
+                            style={{
+                              color: 'rgb(0, 0, 0)',
+                              font: '16px / 20px Raleway, sans-serif'
+                            }}
+                          >
+                            LKR {typeof item.totalPrice === 'number' ? item.totalPrice.toFixed(2) : (item.unitPrice ? (item.unitPrice * item.quantity).toFixed(2) : '-')}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <hr className="my-6 border-gray-300" />
+                    {/* Order Summary */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h5
+                          className="font-semibold mb-2"
+                          style={{
                             color: 'rgb(0, 0, 0)',
                             font: '16px / 20px Raleway, sans-serif'
                           }}
                         >
-                          {item.name}
-                        </h4>
-                        <p 
-                          style={{ 
+                          Order amount
+                        </h5>
+                        <p
+                          className="text-xl font-bold"
+                          style={{
+                            color: 'rgb(0, 0, 0)',
+                            font: '20px / 24px Raleway, sans-serif'
+                          }}
+                        >
+                          LKR {order.totalAmount ? order.totalAmount.toFixed(2) : '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <h5
+                          className="font-semibold mb-2"
+                          style={{
+                            color: 'rgb(0, 0, 0)',
+                            font: '16px / 20px Raleway, sans-serif'
+                          }}
+                        >
+                          Delivered to
+                        </h5>
+                        <p
+                          style={{
                             color: 'rgb(119, 119, 119)',
                             font: '14px / 18px Raleway, sans-serif'
                           }}
                         >
-                          x{item.quantity}
+                          {order.deliveryAddress ? `${order.deliveryAddress.street}, ${order.deliveryAddress.city}, ${order.deliveryAddress.state} ${order.deliveryAddress.zipCode}, ${order.deliveryAddress.country}` : '-'}
                         </p>
                       </div>
-                      <span 
-                        className="font-semibold"
-                        style={{ 
-                          color: 'rgb(0, 0, 0)',
-                          font: '16px / 20px Raleway, sans-serif'
-                        }}
-                      >
-                        ${item.price}
-                      </span>
                     </div>
-                  ))}
-                </div>
-
-                <hr className="my-6 border-gray-300" />
-
-                {/* Order Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h5 
-                      className="font-semibold mb-2"
-                      style={{ 
-                        color: 'rgb(0, 0, 0)',
-                        font: '16px / 20px Raleway, sans-serif'
-                      }}
-                    >
-                      Order amount
-                    </h5>
-                    <p 
-                      className="text-xl font-bold"
-                      style={{ 
-                        color: 'rgb(0, 0, 0)',
-                        font: '20px / 24px Raleway, sans-serif'
-                      }}
-                    >
-                      ${order.total}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h5 
-                      className="font-semibold mb-2"
-                      style={{ 
-                        color: 'rgb(0, 0, 0)',
-                        font: '16px / 20px Raleway, sans-serif'
-                      }}
-                    >
-                      Delivered to
-                    </h5>
-                    <p 
-                      style={{ 
-                        color: 'rgb(119, 119, 119)',
-                        font: '14px / 18px Raleway, sans-serif'
-                      }}
-                    >
-                      {order.deliveryAddress}
-                    </p>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
-          )}
+          );
+        })
+      )}
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="flex justify-center mt-8">
+          <nav className="flex items-center space-x-1" aria-label="Pagination">
+            <button
+              onClick={() => setPagination(p => ({ ...p, currentPage: Math.max(1, p.currentPage - 1) }))}
+              disabled={pagination.currentPage === 1}
+              className={`px-2 py-1 text-base border border-gray-300 bg-white ${pagination.currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
+              aria-label="Previous"
+            >
+              &#60;
+            </button>
+            {[...Array(pagination.totalPages)].map((_, idx) => (
+              <button
+                key={idx + 1}
+                onClick={() => setPagination(p => ({ ...p, currentPage: idx + 1 }))}
+                className={`px-3 py-1 text-base border border-gray-300 ${pagination.currentPage === idx + 1 ? 'bg-black text-white' : 'text-gray-700 hover:bg-gray-100 bg-white'}`}
+                aria-current={pagination.currentPage === idx + 1 ? 'page' : undefined}
+              >
+                {idx + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => setPagination(p => ({ ...p, currentPage: Math.min(p.totalPages, p.currentPage + 1) }))}
+              disabled={pagination.currentPage === pagination.totalPages}
+              className={`px-2 py-1 text-base border border-gray-300 bg-white ${pagination.currentPage === pagination.totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
+              aria-label="Next"
+            >
+              &#62;
+            </button>
+          </nav>
         </div>
-      ))}
-
+      )}
       {/* Action Buttons */}
       <div className="flex items-center justify-between pt-8">
         <button
@@ -292,21 +409,22 @@ const MyOrders = () => {
         >
           Delete History
         </button>
-        
         <div className="flex items-center">
           <input
             type="checkbox"
             id="showActive"
             className="mr-2 w-4 h-4"
+            checked={showActive}
+            onChange={e => setShowActive(e.target.checked)}
           />
-          <label 
+          <label
             htmlFor="showActive"
-            style={{ 
+            style={{
               color: 'rgb(119, 119, 119)',
               font: '16px / 24px Raleway, sans-serif'
             }}
           >
-            Show only active
+            Show only active (Pending/Assigned)
           </label>
         </div>
       </div>
