@@ -10,7 +10,7 @@ const FeatureProduct = () => {
   React.useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const url = (import.meta.env ? import.meta.env.VITE_API_BASE_URL : process.env.VITE_API_BASE_URL) + "/api/products";
+  const url = import.meta.env.VITE_API_BASE_URL + "/api/products";
         const response = await fetch(url);
         const data = await response.json();
         const apiProducts = data?.data?.products || [];
@@ -20,16 +20,23 @@ const FeatureProduct = () => {
           ...new Set(
             apiProducts.flatMap((p) => {
               if (Array.isArray(p.category)) {
-                return p.category.map((cat) => (cat && typeof cat === 'object' && cat.name ? cat.name : cat));
+                return p.category.map((cat) =>
+                  cat && typeof cat === "object" && cat.name ? cat.name : cat
+                );
               }
-              if (p.category && typeof p.category === 'object' && !Array.isArray(p.category) && p.category.name) {
+              if (
+                p.category &&
+                typeof p.category === "object" &&
+                !Array.isArray(p.category) &&
+                p.category.name
+              ) {
                 return [p.category.name];
               }
-              if (typeof p.category === 'string') return [p.category];
+              if (typeof p.category === "string") return [p.category];
               return [];
             })
-          )
-        ].filter((cat) => typeof cat === 'string');
+          ),
+        ].filter((cat) => typeof cat === "string");
         setCategories(["All", ...cats]);
       } catch {
         setProducts([]);
@@ -40,18 +47,29 @@ const FeatureProduct = () => {
   }, []);
 
   // Filter by selected category
-  const filteredProducts = activeCategory === "All"
-    ? products
-    : products.filter((p) => {
-        if (Array.isArray(p.category)) {
-          return p.category.some((cat) => (cat && typeof cat === 'object' && cat.name ? cat.name === activeCategory : cat === activeCategory));
-        }
-        if (p.category && typeof p.category === 'object' && !Array.isArray(p.category) && p.category.name) {
-          return p.category.name === activeCategory;
-        }
-        if (typeof p.category === 'string') return p.category === activeCategory;
-        return false;
-      });
+  const filteredProducts =
+    activeCategory === "All"
+      ? products
+      : products.filter((p) => {
+          if (Array.isArray(p.category)) {
+            return p.category.some((cat) =>
+              cat && typeof cat === "object" && cat.name
+                ? cat.name === activeCategory
+                : cat === activeCategory
+            );
+          }
+          if (
+            p.category &&
+            typeof p.category === "object" &&
+            !Array.isArray(p.category) &&
+            p.category.name
+          ) {
+            return p.category.name === activeCategory;
+          }
+          if (typeof p.category === "string")
+            return p.category === activeCategory;
+          return false;
+        });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
@@ -89,17 +107,25 @@ const FeatureProduct = () => {
             ? product.images.find((img) => img.isMain) || product.images[0]
             : undefined;
           // Use sale price if available, else regular
-          let price = Array.isArray(product.variants) && product.variants[0]?.price
-            ? product.variants[0].price.sale ?? product.variants[0].price.regular
-            : product.price ?? 0;
+          let price =
+            Array.isArray(product.variants) && product.variants[0]?.price
+              ? product.variants[0].price.sale ??
+                product.variants[0].price.regular
+              : product.price ?? 0;
           // Total quantity from all variants
           let totalQuantity = Array.isArray(product.variants)
-            ? product.variants.reduce((sum, v) => sum + (v.stockQuantity || 0), 0)
+            ? product.variants.reduce(
+                (sum, v) => sum + (v.stockQuantity || 0),
+                0
+              )
             : product.totalStock ?? 0;
           // Badge logic: show 'SALE' if discount, 'FEATURED' if isFeatured
           let badge = product.isFeatured
-            ? 'FEATURED'
-            : (typeof product.discountPercentage === 'number' && product.discountPercentage > 0 ? 'SALE' : undefined);
+            ? "FEATURED"
+            : typeof product.discountPercentage === "number" &&
+              product.discountPercentage > 0
+            ? "SALE"
+            : undefined;
           return (
             <div
               key={product._id}
