@@ -15,6 +15,7 @@ import SetNewPasswordPage from "./pages/SetNewPasswordPage";
 import BlogPage from "./pages/BlogPage";
 import ContactPage from "./pages/ContactPage";
 import AboutPage from "./pages/AboutPage";
+import WishlistPage from "./pages/WishlistPage";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 function App() {
@@ -37,6 +38,7 @@ function App() {
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
         </Routes>
       </main>
       <Footer />

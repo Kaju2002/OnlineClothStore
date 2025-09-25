@@ -197,9 +197,13 @@ const Navbar = () => {
             </button>
 
             {/* Wishlist Button - Hidden on mobile */}
-            <button className="hidden sm:block p-2 rounded-full text-gray-700 hover:text-black hover:bg-gray-50 transition-all duration-200 transform hover:scale-110">
+            <a
+              href="/wishlist"
+              className="hidden sm:block p-2 rounded-full text-gray-700 hover:text-black hover:bg-gray-50 transition-all duration-200 transform hover:scale-110 relative"
+              title="Wishlist"
+            >
               <Heart size={20} strokeWidth={1.5} />
-            </button>
+            </a>
 
             {/* User Account Button */}
             <div className="relative" ref={userDropdownRef}>
@@ -233,12 +237,12 @@ const Navbar = () => {
                         Profile
                       </a>
                       <a
-                        href="/favourites"
+                        href="/wishlist"
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200"
                         onClick={() => setIsUserDropdownOpen(false)}
                       >
                         <Heart size={16} className="mr-2" />
-                        Favourites
+                        Wishlist
                       </a>
                       <hr className="my-2 border-gray-100" />
                       <button
@@ -360,12 +364,12 @@ const Navbar = () => {
                   Profile
                 </a>
                 <a
-                  href="/favourites"
+                  href="/wishlist"
                   className="flex items-center justify-center px-4 py-2 text-gray-700 hover:text-black transition-colors duration-200"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <Heart size={18} className="mr-2" />
-                  Favourites
+                  Wishlist
                 </a>
                 <button
                   onClick={() => {

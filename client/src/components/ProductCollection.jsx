@@ -11,6 +11,7 @@ const ProductCollection = () => {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch categories
   useEffect(() => {
@@ -50,14 +51,16 @@ const ProductCollection = () => {
       }
     };
 
-    // Fetch filtered products
+    // Fetch filtered products from API using query params
     const fetchFilteredProducts = async () => {
       try {
         setLoading(true);
-        let url = `${import.meta.env.VITE_API_BASE_URL}/api/products`;
-        if (selectedCategory) {
-          url += `?category=${selectedCategory}`;
-        }
+        let url = `${import.meta.env.VITE_API_BASE_URL}/api/products?`;
+        if (selectedCategory) url += `category=${selectedCategory}&`;
+        if (searchQuery.trim()) url += `tags=${encodeURIComponent(searchQuery.trim())}&`;
+        if (priceRange[0] !== 0) url += `minPrice=${priceRange[0]}&`;
+        if (priceRange[1] !== 100) url += `maxPrice=${priceRange[1]}&`;
+        url = url.replace(/&$/, '');
         const response = await fetch(url);
         const data = await response.json();
         if (data.success && data.data && data.data.products) {
@@ -75,7 +78,7 @@ const ProductCollection = () => {
 
     fetchAllProducts();
     fetchFilteredProducts();
-  }, [selectedCategory]);
+  }, [selectedCategory, searchQuery, priceRange]);
 
   // Handle category selection
   const handleCategoryChange = (categoryId) => {
@@ -121,7 +124,6 @@ const ProductCollection = () => {
       return;
     }
 
-    // Get first available variant (since we don't have variant selection in collection view)
     const firstVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
     
     if (!firstVariant) {
@@ -134,7 +136,6 @@ const ProductCollection = () => {
       return;
     }
 
-    // Check if the same variant is already in cart
     const alreadyInCart = await checkIfAlreadyInCart(product._id, firstVariant.sku);
     if (alreadyInCart) {
       toast.warning(`${product.name} is already in your cart!`);
@@ -186,10 +187,12 @@ const ProductCollection = () => {
           <div className="mb-8">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <input 
-                type="text" 
-                placeholder="Type for Expression or this categories"
+              <input
+                type="text"
+                placeholder="Search by tag"
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-none text-sm"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
@@ -364,12 +367,10 @@ const ProductCollection = () => {
                 const regularPrice = firstVariant?.price?.regular;
                 const salePrice = firstVariant?.price?.sale;
                 const hasDiscount = salePrice && salePrice < regularPrice;
-                
                 // Get main image
                 const mainImage = product.images?.find(img => img.isMain)?.url || 
                                 product.images?.[0]?.url || 
                                 'https://via.placeholder.com/300x300';
-                
                 return (
                   <div key={product._id} className="group cursor-pointer">
                     <div className="relative overflow-hidden bg-gray-50 mb-3">
@@ -391,7 +392,6 @@ const ProductCollection = () => {
                       <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100">
                         <Heart className="w-4 h-4" />
                       </button>
-                      
                       {/* Quick view buttons */}
                       <div className="absolute bottom-2 left-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <a href={`/product/${product._id}`}>
@@ -408,7 +408,6 @@ const ProductCollection = () => {
                         </Button>
                       </div>
                     </div>
-                    
                     <div className="text-center">
                       <h3 className="font-medium text-sm mb-1 text-gray-800">{product.name}</h3>
                       <div className="flex justify-center items-center space-x-2">
