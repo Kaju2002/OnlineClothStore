@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { Button } from '../ui/button';
 
-const ProductReviews = ({ productId = 1 }) => {
+const ProductReviews = ({ productId: propProductId }) => {
+  const { id: paramProductId } = useParams();
+  const productId = propProductId || paramProductId;
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [reviewName, setReviewName] = useState('');
   const [reviewEmail, setReviewEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState(null);
 
   const reviews = [
     {
@@ -46,22 +51,43 @@ const ProductReviews = ({ productId = 1 }) => {
     ));
   };
 
-  const handleSubmitReview = (e) => {
+  const handleSubmitReview = async (e) => {
     e.preventDefault();
-    // Handle review submission logic here
-    console.log({
-      productId,
-      rating: reviewRating,
-      text: reviewText,
-      name: reviewName,
-      email: reviewEmail
-    });
-    
-    // Reset form
-    setReviewRating(0);
-    setReviewText('');
-    setReviewName('');
-    setReviewEmail('');
+    setSubmitting(true);
+    setSubmitMessage(null);
+    try {
+      const token = localStorage.getItem('authToken') || '';
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+      const res = await fetch(import.meta.env.VITE_API_BASE_URL + "/api/reviews", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          productId: productId,
+          rating: reviewRating,
+          title: reviewText.slice(0, 50),
+          description: reviewText,
+          name: reviewName,
+          email: reviewEmail,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSubmitMessage({ type: "success", text: data.message || "Review submitted!" });
+        setReviewRating(0);
+        setReviewText("");
+        setReviewName("");
+        setReviewEmail("");
+      } else {
+        setSubmitMessage({ type: "error", text: data.message || "Failed to submit review." });
+      }
+    } catch {
+      setSubmitMessage({ type: "error", text: "Failed to submit review." });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -176,12 +202,17 @@ const ProductReviews = ({ productId = 1 }) => {
               />
             </div>
 
+            {submitMessage && (
+              <div className={`mb-2 text-sm rounded px-3 py-2 ${submitMessage.type === "success" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                {submitMessage.text}
+              </div>
+            )}
             <Button 
               type="submit"
               className="bg-black text-white hover:bg-gray-800 py-4 px-8 text-sm font-medium rounded-lg"
-              disabled={!reviewRating || !reviewText.trim() || !reviewName.trim() || !reviewEmail.trim()}
+              disabled={submitting || !reviewRating || !reviewText.trim() || !reviewName.trim() || !reviewEmail.trim()}
             >
-              Post A Review
+              {submitting ? "Posting..." : "Post A Review"}
             </Button>
           </form>
         </div>
