@@ -2,10 +2,8 @@ import React, { useState } from "react";
 import { Button } from "@/ui/button";
 
 export default function HeroSection() {
-  // State for managing current image index
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Array of images for the carousel
   const images = [
     {
       src: "/hero.png",
@@ -88,13 +86,15 @@ export default function HeroSection() {
             </h1>
 
             <div className="pt-6">
-              <Button
-                className="bg-black text-white px-12 py-4 text-sm font-medium tracking-[0.15em] uppercase hover:bg-gray-800 transition-colors duration-300 shadow-lg hover:shadow-xl border-2 border-black hover:border-gray-800 rounded-none relative overflow-hidden group"
-                size="lg"
-              >
-                <span className="relative z-10">Shop Now</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </Button>
+              <a href="/product">
+                <Button
+                  className="bg-black text-white px-12 py-4 text-sm font-medium tracking-[0.15em] uppercase hover:bg-gray-800 transition-colors duration-300 shadow-lg hover:shadow-xl border-2 border-black hover:border-gray-800 rounded-none relative overflow-hidden group"
+                  size="lg"
+                >
+                  <span className="relative z-10">Shop Now</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </Button>
+              </a>
             </div>
           </div>
         </div>

@@ -119,7 +119,6 @@ const FeatureProduct = () => {
                 0
               )
             : product.totalStock ?? 0;
-          // Badge logic: show 'SALE' if discount, 'FEATURED' if isFeatured
           let badge = product.isFeatured
             ? "FEATURED"
             : typeof product.discountPercentage === "number" &&
@@ -148,13 +147,15 @@ const FeatureProduct = () => {
       </div>
 
       <div className="flex justify-center mt-8 sm:mt-10 lg:mt-12">
-        <Button
-          className="bg-black text-white px-8 sm:px-10 lg:px-12 py-3 sm:py-4 text-xs sm:text-sm font-medium tracking-[0.15em] uppercase hover:bg-gray-800 transition-colors duration-300 shadow-lg hover:shadow-xl border-2 border-black hover:border-gray-800 rounded-none relative overflow-hidden group w-full sm:w-auto max-w-xs"
-          size="md"
-        >
-          <span className="relative z-10">See All Products</span>
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-        </Button>
+        <a href="/product">
+          <Button
+            className="bg-black text-white px-8 sm:px-10 lg:px-12 py-3 sm:py-4 text-xs sm:text-sm font-medium tracking-[0.15em] uppercase hover:bg-gray-800 transition-colors duration-300 shadow-lg hover:shadow-xl border-2 border-black hover:border-gray-800 rounded-none relative overflow-hidden group w-full sm:w-auto max-w-xs"
+            size="md"
+          >
+            <span className="relative z-10">See All Products</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </Button>
+        </a>
       </div>
     </div>
   );

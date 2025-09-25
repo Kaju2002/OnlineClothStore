@@ -18,19 +18,24 @@ const BannerSection = () => {
           <div className="text-center space-y-6 px-4">
             <div className="space-y-4">
               <p className="text-sm font-raleway text-gray-600 uppercase tracking-[0.2em] font-normal">
-                <span className="font-bold text-gray-800">DEAL</span> <span className="font-normal text-gray-400">OF THE WEEK</span>
+                <span className="font-bold text-gray-800">DEAL</span>{" "}
+                <span className="font-normal text-gray-400">OF THE WEEK</span>
               </p>
               <h1 className="text-4xl sm:text-5xl font-josefin-sans font-normal leading-tight text-black">
                 Stay Warm
                 <br />
                 And Trendy
               </h1>
-              <p className="text-lg text-gray-600 font-raleway">The countdown is finished!</p>
+              <p className="text-lg text-gray-600 font-raleway">
+                The countdown is finished!
+              </p>
             </div>
-            <button className="bg-black text-white px-10 py-4 font-raleway text-sm uppercase tracking-wide hover:bg-gray-800 transition-colors duration-300 shadow-lg hover:shadow-xl border-2 border-black hover:border-gray-800 rounded-none relative overflow-hidden group mx-auto">
-              <span className="relative z-10">Shop Now</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            </button>
+            <a href="/product">
+              <button className="bg-black text-white px-10 py-4 font-raleway text-sm uppercase tracking-wide hover:bg-gray-800 transition-colors duration-300 shadow-lg hover:shadow-xl border-2 border-black hover:border-gray-800 rounded-none relative overflow-hidden group mx-auto">
+                <span className="relative z-10">Shop Now</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </button>
+            </a>
           </div>
         </div>
 
@@ -41,19 +46,24 @@ const BannerSection = () => {
             <div className="space-y-6 max-w-md">
               <div className="space-y-4">
                 <p className="text-sm font-raleway text-gray-600 uppercase tracking-[0.2em] font-normal">
-                  <span className="font-bold text-gray-800">DEAL</span> <span className="font-normal text-gray-400">OF THE WEEK</span>
+                  <span className="font-bold text-gray-800">DEAL</span>{" "}
+                  <span className="font-normal text-gray-400">OF THE WEEK</span>
                 </p>
                 <h1 className="text-5xl lg:text-6xl xl:text-7xl font-josefin-sans font-normal leading-tight text-black">
                   Stay Warm
                   <br />
                   And Trendy
                 </h1>
-                <p className="text-lg text-gray-600 font-raleway">The countdown is finished!</p>
+                <p className="text-lg text-gray-600 font-raleway">
+                  The countdown is finished!
+                </p>
               </div>
-              <button className="bg-black text-white px-10 py-4 font-raleway text-sm uppercase tracking-wide hover:bg-gray-800 transition-colors duration-300 shadow-lg hover:shadow-xl border-2 border-black hover:border-gray-800 rounded-none relative overflow-hidden group">
-                <span className="relative z-10">Shop Now</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </button>
+              <a href="/product">
+                <button className="bg-black text-white px-10 py-4 font-raleway text-sm uppercase tracking-wide hover:bg-gray-800 transition-colors duration-300 shadow-lg hover:shadow-xl border-2 border-black hover:border-gray-800 rounded-none relative overflow-hidden group">
+                  <span className="relative z-10">Shop Now</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </button>
+              </a>
             </div>
           </div>
           {/* Vertical Separator */}
@@ -64,13 +74,13 @@ const BannerSection = () => {
               src="https://mollee-html-ten.vercel.app/assets/img/deal-of-the-week.jpg"
               alt="Woman in white knit sweater and black pants"
               className="w-full h-auto object-cover rounded-none"
-              style={{ maxHeight: '700px' }}
+              style={{ maxHeight: "700px" }}
             />
           </div>
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default BannerSection
+export default BannerSection;
