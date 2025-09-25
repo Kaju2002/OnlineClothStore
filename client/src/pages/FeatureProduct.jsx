@@ -3,73 +3,55 @@ import ProductCard from "../ui/ProductCard";
 import { useState } from "react";
 import { Button } from "../ui/button";
 const FeatureProduct = () => {
-  const [activeCategory, setActiveCategory] = useState(0);
-  const categories = ["All", "Men", "Women", "Accessories", "New Arrivals"];
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState(["All"]);
+  const [activeCategory, setActiveCategory] = useState("All");
 
-  const products = [
-    {
-      id: 1,
-      name: "Cotton T-shirt",
-      price: "35.99",
-      image:
-        "https://mollee-html-ten.vercel.app/assets/img/examples/product-item_5.jpg",
-      badge: "NEW",
-    },
-    {
-      id: 2,
-      name: "Textured turtleneck with zip",
-      price: "25.99",
-      originalPrice: "59.99",
-      image:
-        "https://mollee-html-ten.vercel.app/assets/img/examples/product-item_6.jpg",
-      badge: "SALE",
-    },
-    {
-      id: 3,
-      name: "Spray wrap skirt",
-      price: "29.99",
-      image:
-        "https://mollee-html-ten.vercel.app/assets/img/examples/product-item_7.jpg",
-    },
-    {
-      id: 4,
-      name: "Cotton T-shirt",
-      price: "63.99",
-      image:
-        "https://mollee-html-ten.vercel.app/assets/img/examples/product-item_8.jpg",
-    },
-    {
-      id: 5,
-      name: "Cotton T-shirt",
-      price: "35.99",
-      image:
-        "https://mollee-html-ten.vercel.app/assets/img/examples/product-item_5.jpg",
-      badge: "NEW",
-    },
-    {
-      id: 6,
-      name: "Textured turtleneck with zip",
-      price: "25.99",
-      originalPrice: "59.99",
-      image:
-        "https://mollee-html-ten.vercel.app/assets/img/examples/product-item_6.jpg",
-      badge: "SALE",
-    },
-    {
-      id: 7,
-      name: "Spray wrap skirt",
-      price: "29.99",
-      image:
-        "https://mollee-html-ten.vercel.app/assets/img/examples/product-item_7.jpg",
-    },
-    {
-      id: 8,
-      name: "Cotton T-shirt",
-      price: "63.99",
-      image:
-        "https://mollee-html-ten.vercel.app/assets/img/examples/product-item_8.jpg",
-    },
-  ];
+  React.useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const url = (import.meta.env ? import.meta.env.VITE_API_BASE_URL : process.env.VITE_API_BASE_URL) + "/api/products";
+        const response = await fetch(url);
+        const data = await response.json();
+        const apiProducts = data?.data?.products || [];
+        setProducts(apiProducts);
+        // Collect unique categories from ALL products
+        const cats = [
+          ...new Set(
+            apiProducts.flatMap((p) => {
+              if (Array.isArray(p.category)) {
+                return p.category.map((cat) => (cat && typeof cat === 'object' && cat.name ? cat.name : cat));
+              }
+              if (p.category && typeof p.category === 'object' && !Array.isArray(p.category) && p.category.name) {
+                return [p.category.name];
+              }
+              if (typeof p.category === 'string') return [p.category];
+              return [];
+            })
+          )
+        ].filter((cat) => typeof cat === 'string');
+        setCategories(["All", ...cats]);
+      } catch {
+        setProducts([]);
+        setCategories(["All"]);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  // Filter by selected category
+  const filteredProducts = activeCategory === "All"
+    ? products
+    : products.filter((p) => {
+        if (Array.isArray(p.category)) {
+          return p.category.some((cat) => (cat && typeof cat === 'object' && cat.name ? cat.name === activeCategory : cat === activeCategory));
+        }
+        if (p.category && typeof p.category === 'object' && !Array.isArray(p.category) && p.category.name) {
+          return p.category.name === activeCategory;
+        }
+        if (typeof p.category === 'string') return p.category === activeCategory;
+        return false;
+      });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
@@ -84,12 +66,12 @@ const FeatureProduct = () => {
 
       <div className="flex justify-center mb-8 sm:mb-12 lg:mb-16">
         <nav className="flex flex-wrap justify-center gap-1 sm:space-x-1 bg-gray-100 rounded-full p-1 max-w-full overflow-x-auto">
-          {categories.map((category, index) => (
+          {categories.map((category) => (
             <button
               key={category}
-              onClick={() => setActiveCategory(index)}
+              onClick={() => setActiveCategory(category)}
               className={`px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-full transition-all duration-300 whitespace-nowrap ${
-                index === activeCategory
+                category === activeCategory
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
               }`}
@@ -101,15 +83,42 @@ const FeatureProduct = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-        {products.map((product, index) => (
-          <div
-            key={product.id}
-            className="animate-fade-in"
-            style={{ animationDelay: `${index * 100}ms` }}
-          >
-            <ProductCard product={product} />
-          </div>
-        ))}
+        {filteredProducts.map((product, index) => {
+          // Use main image if available
+          let mainImage = Array.isArray(product.images)
+            ? product.images.find((img) => img.isMain) || product.images[0]
+            : undefined;
+          // Use sale price if available, else regular
+          let price = Array.isArray(product.variants) && product.variants[0]?.price
+            ? product.variants[0].price.sale ?? product.variants[0].price.regular
+            : product.price ?? 0;
+          // Total quantity from all variants
+          let totalQuantity = Array.isArray(product.variants)
+            ? product.variants.reduce((sum, v) => sum + (v.stockQuantity || 0), 0)
+            : product.totalStock ?? 0;
+          // Badge logic: show 'SALE' if discount, 'FEATURED' if isFeatured
+          let badge = product.isFeatured
+            ? 'FEATURED'
+            : (typeof product.discountPercentage === 'number' && product.discountPercentage > 0 ? 'SALE' : undefined);
+          return (
+            <div
+              key={product._id}
+              className="animate-fade-in"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <ProductCard
+                product={{
+                  ...product,
+                  name: product.name,
+                  image: mainImage?.url,
+                  price,
+                  totalQuantity,
+                  badge,
+                }}
+              />
+            </div>
+          );
+        })}
       </div>
 
       <div className="flex justify-center mt-8 sm:mt-10 lg:mt-12">
