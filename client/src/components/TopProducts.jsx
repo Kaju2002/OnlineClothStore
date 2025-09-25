@@ -71,7 +71,15 @@ export default function TopProducts() {
                           <ProductCard 
                             key={product._id}
                             product={{
-                              name: product.productName,
+                              name: (
+                                <a 
+                                  href={`/product/${product._id}`}
+                                  className="text-gray-900 hover:underline"
+                                  title={product.productName}
+                                >
+                                  {product.productName}
+                                </a>
+                              ),
                               image: product.image,
                               price: product.totalRevenue,
                               brand: product.brand,

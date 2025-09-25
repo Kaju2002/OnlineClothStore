@@ -8,7 +8,7 @@ const Collections = () => {
       subtitle: "NEW ACCESSORIES",
       title: "Fashion For This Summer",
       description: "Discover the latest trends in summer fashion accessories",
-      link: "#"
+      link: "/product"
     },
     {
       id: 2,
@@ -16,7 +16,7 @@ const Collections = () => {
       subtitle: "MEN COLLECTION",
       title: "New Autumn Arrivals 2020",
       description: "Sophisticated styles for the modern gentleman",
-      link: "#"
+      link: "/product"
     },
     {
       id: 3,
@@ -24,7 +24,7 @@ const Collections = () => {
       subtitle: "WOMEN COLLECTION",
       title: "Trendy Look For Every Day",
       description: "Elegant pieces for your everyday wardrobe",
-      link: "#"
+      link: "/product"
     },
     {
       id: 4,
@@ -32,7 +32,7 @@ const Collections = () => {
       subtitle: "SEASON SALE",
       title: "Season Sale",
       description: "Exclusive offers on premium fashion items",
-      link: "#"
+      link: "/product"
     }
   ];
 
@@ -145,10 +145,12 @@ const Collections = () => {
 
         {/* Call to Action */}
         <div className="text-center mt-24 lg:mt-32">
-          <button className="group relative overflow-hidden bg-black text-white px-12 py-4 text-base font-medium tracking-widest uppercase transition-all duration-300 hover:bg-gray-900 hover:shadow-xl hover:-translate-y-1">
-            <span className="relative z-10">View All Collections</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-gray-800 to-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </button>
+          <a href="/product">
+            <button className="group relative overflow-hidden bg-black text-white px-12 py-4 text-base font-medium tracking-widest uppercase transition-all duration-300 hover:bg-gray-900 hover:shadow-xl hover:-translate-y-1">
+              <span className="relative z-10">View All Collections</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-800 to-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </button>
+          </a>
         </div>
       </div>
     </section>

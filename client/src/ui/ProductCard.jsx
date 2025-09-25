@@ -42,7 +42,19 @@ const ProductCard = ({ product }) => {
       </div>
 
       <div className="p-3 sm:p-4">
-        <h3 className="text-gray-800 font-medium mb-2 text-sm sm:text-base line-clamp-2">{product.name}</h3>
+        <h3 className="text-gray-800 font-medium mb-2 text-sm sm:text-base line-clamp-2">
+          {product._id ? (
+            <a
+              href={`/product/${product._id}`}
+              className="text-gray-900 hover:underline cursor-pointer"
+              title={typeof product.name === 'string' ? product.name : undefined}
+            >
+              {typeof product.name === 'string' ? product.name : ''}
+            </a>
+          ) : (
+            typeof product.name === 'string' ? product.name : ''
+          )}
+        </h3>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-base sm:text-lg font-semibold text-gray-900">
             {new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(product.price)}
