@@ -1,7 +1,30 @@
-import React from "react"
-import { Heart } from "lucide-react"
+
+import React, { useState, useEffect } from "react";
+import { Heart } from "lucide-react";
 
 const ProductCard = ({ product }) => {
+  const [isFavourite, setIsFavourite] = useState(false);
+
+  useEffect(() => {
+    const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+    setIsFavourite(wishlist.some((p) => p._id === product._id));
+  }, [product._id]);
+
+  const handleFavourite = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    let wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+    if (wishlist.some((p) => p._id === product._id)) {
+      wishlist = wishlist.filter((p) => p._id !== product._id);
+      setIsFavourite(false);
+    } else {
+      wishlist.push(product);
+      setIsFavourite(true);
+    }
+    localStorage.setItem("wishlist", JSON.stringify(wishlist));
+    window.dispatchEvent(new Event("wishlistChanged"));
+  };
+
   return (
     <div className="bg-white rounded-lg  transition-shadow duration-200 overflow-hidden w-full max-w-sm mx-auto">
       <div className="relative">
@@ -36,8 +59,12 @@ const ProductCard = ({ product }) => {
         )}
 
         {/* Heart Icon */}
-        <button className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow">
-          <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 hover:text-red-500 transition-colors" />
+        <button
+          className={`absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow ${isFavourite ? "text-red-500" : "text-gray-400"}`}
+          onClick={handleFavourite}
+          aria-label={isFavourite ? "Remove from favourites" : "Add to favourites"}
+        >
+          <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isFavourite ? "text-red-500" : "text-gray-400"}`} fill={isFavourite ? "#ef4444" : "none"} />
         </button>
       </div>
 
@@ -70,7 +97,7 @@ const ProductCard = ({ product }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ProductCard
+export default ProductCard;
