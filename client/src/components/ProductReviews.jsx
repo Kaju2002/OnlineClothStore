@@ -13,29 +13,26 @@ const ProductReviews = ({ productId: propProductId }) => {
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState(null);
 
-  const reviews = [
-    {
-      id: 1,
-      name: "Melissa Johnson",
-      date: "Aug 29, 2023",
-      rating: 5,
-      comment: "Praedsent volutpat adipiscing eleifend viverra pneraes lorem incidunt labore vitae et dolore ex aliqua tempor duis laboris molestui. All-bisemani laborum hususet ut aliquium ut laborum incididunt ut fugiat."
-    },
-    {
-      id: 2,
-      name: "Patrick Filips",
-      date: "Jul 12, 2023",
-      rating: 4,
-      comment: "Praedsent volutpat adipiscing eleifend viverra pneraes lorem incidunt labore vitae et dolore ex aliqua tempor duis laboris molestui. All-bisemani laborum hususet ut aliquium ut laborum incididunt ut fugiat."
-    },
-    {
-      id: 3,
-      name: "Oliver Jenkins",
-      date: "May 8, 2023",
-      rating: 5,
-      comment: "Praedsent volutpat adipiscing eleifend viverra pneraes lorem incidunt labore vitae et dolore ex aliqua tempor duis laboris molestui. All-bisemani laborum hususet ut aliquium ut laborum incididunt ut fugiat."
-    }
-  ];
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+
+  React.useEffect(() => {
+    if (!productId) return;
+    setLoadingReviews(true);
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/reviews?productId=${productId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.data)) {
+          setReviews(data.data);
+        } else if (data.success && data.data) {
+          setReviews([data.data]);
+        } else {
+          setReviews([]);
+        }
+      })
+      .catch(() => setReviews([]))
+      .finally(() => setLoadingReviews(false));
+  }, [productId]);
 
   const renderStars = (rating, interactive = false, onStarClick = null) => {
     return [...Array(5)].map((_, i) => (
@@ -95,56 +92,68 @@ const ProductReviews = ({ productId: propProductId }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Reviews List - Left Side */}
         <div className="space-y-4">
-          {reviews.map((review) => (
-            <div key={review.id} className="bg-gray-50 p-6 rounded-lg">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center space-x-4">
-                  <h4 
-                    className="capitalize p-0"
-                    style={{ 
-                      color: 'rgb(0, 0, 0)',
-                      font: '400 20px / 24px "Josefin Sans", sans-serif'
-                    }}
-                  >
-                    {review.name}
-                  </h4>
-                  <span 
-                    className="relative"
-                    style={{ 
-                      color: 'rgb(68, 68, 68)',
-                      font: '16px / 27px Raleway, sans-serif',
-                      background: 'rgb(255, 255, 255)'
-                    }}
-                  >
-                    {review.date}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="flex items-center">
-                    {renderStars(review.rating)}
+          {loadingReviews ? (
+            <div className="text-gray-500">Loading reviews...</div>
+          ) : reviews.length === 0 ? (
+            <div className="text-gray-500">No reviews yet.</div>
+          ) : (
+            reviews.map((review) => (
+              <div key={review._id} className="bg-gray-50 p-6 rounded-lg">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-4">
+                    <h4 
+                      className="capitalize p-0"
+                      style={{ 
+                        color: 'rgb(0, 0, 0)',
+                        font: '400 20px / 24px "Josefin Sans", sans-serif'
+                      }}
+                    >
+                      {review.user?.firstName || review.name || 'Anonymous'}
+                    </h4>
+                    <span 
+                      className="relative"
+                      style={{ 
+                        color: 'rgb(68, 68, 68)',
+                        font: '16px / 27px Raleway, sans-serif',
+                        background: 'rgb(255, 255, 255)'
+                      }}
+                    >
+                      {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ''}
+                    </span>
                   </div>
-                  <img 
-                    src="https://mollee-html-ten.vercel.app/assets/img/svg/review__red.svg"
-                    alt="Review"
-                    className="w-5 h-5"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
+                  <div className="flex items-center space-x-2">
+                    <div className="flex items-center">
+                      {renderStars(review.rating)}
+                    </div>
+                    <img 
+                      src={review.user?.avatar?.url || "https://mollee-html-ten.vercel.app/assets/img/svg/review__red.svg"}
+                      alt="Review"
+                      className="w-5 h-5 rounded-full"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  </div>
                 </div>
+                <p 
+                  className="relative"
+                  style={{ 
+                    color: 'rgb(68, 68, 68)',
+                    font: '16px / 27px Raleway, sans-serif',
+                    background: 'rgb(255, 255, 255)'
+                  }}
+                >
+                  {review.description || review.comment}
+                </p>
+                {review.adminReply && (
+                  <div className="mt-3 p-3 bg-green-50 border-l-4 border-green-500 rounded">
+                    <div className="text-xs text-green-700 mb-1 font-semibold">Admin reply:</div>
+                    <div className="text-sm text-green-900">{review.adminReply.message}</div>
+                  </div>
+                )}
               </div>
-              <p 
-                className="relative"
-                style={{ 
-                  color: 'rgb(68, 68, 68)',
-                  font: '16px / 27px Raleway, sans-serif',
-                  background: 'rgb(255, 255, 255)'
-                }}
-              >
-                {review.comment}
-              </p>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Leave A Review Form - Right Side */}
