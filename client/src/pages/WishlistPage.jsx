@@ -113,19 +113,29 @@ const WishlistPage = () => {
 
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-        <div>
-          <h2 className="wishlist__title mb-2">Wishlist</h2>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs text-gray-400">-|</span>
-            <a href="/" className="text-xs text-gray-700 hover:underline">Home</a>
-            <span className="text-xs text-gray-400">Wishlist</span>
-          </div>
-          <div className="h-0.5 w-32 bg-black mb-2" />
+    <div className="max-w-7xl mx-auto py-8 px-4">
+      {/* Breadcrumb */}
+      <div className="mb-6">
+        <nav className="text-sm" aria-label="Breadcrumb">
+          <ol className="list-none p-0 inline-flex">
+            <li className="flex items-center">
+              <a href="/" className="text-gray-500 hover:text-black">Home</a>
+              <span className="mx-2 text-gray-400">/</span>
+            </li>
+            <li className="flex items-center">
+              <span className="text-[#e94560]">Wishlist</span>
+            </li>
+          </ol>
+        </nav>
+      </div>
+
+      {/* Banner Section */}
+      <div className="rounded-lg flex flex-col md:flex-row md:items-center md:justify-between mb-10 p-10">
+        <div className="flex-1 flex flex-col items-start justify-center">
+          <h2 className="wishlist__title text-[4.5rem] md:text-[6rem] font-bold mb-4 text-left">Wishlist</h2>
+          <div className="h-1 w-20 bg-[#e94560] mb-2 ml-0 md:ml-0" style={{marginLeft:0}} />
         </div>
-        <img src="/hero.png" alt="Wishlist Banner" className="w-full md:w-96 h-40 object-cover rounded-lg mt-4 md:mt-0" />
+        <img src="/hero.png" alt="Wishlist Banner" className="w-full md:w-[550px] h-[320px] object-cover rounded-lg mb-6 md:mb-0 md:ml-10" />
       </div>
 
       {/* Wishlist Table */}
