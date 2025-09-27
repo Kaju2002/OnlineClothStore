@@ -17,7 +17,7 @@ const Footer = () => {
               />
             </div>
             <p className="footer-description text-center mb-6">
-              Cillum eu id enim aliquip aute ullamco anim. Culpa deserunt nostrud excepteur voluptate.
+              TrendByte brings you the latest fashion collections and top-quality products. Join our community and stay stylish every season!
             </p>
             <div>
               <p className="footer-description text-center mb-2">Find us here:</p>
@@ -148,8 +148,8 @@ const Footer = () => {
                 <span className="text-2xl font-bold tracking-wide text-gray-900">TrendByte</span>
               </div>
               <span className="footer-description">
-                Cillum eu id enim aliquip aute ullamco anim. <br />
-                Culpa deserunt nostrud excepteur voluptate.
+                TrendByte brings you the latest fashion collections and top-quality products.<br />
+                Join our community and stay stylish every season!
               </span>
               <div className="mt-6">
                 <span className="footer-description">Find us here:</span>

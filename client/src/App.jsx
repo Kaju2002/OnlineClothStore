@@ -18,6 +18,7 @@ import AboutPage from "./pages/AboutPage";
 import WishlistPage from "./pages/WishlistPage";
 import { ToastContainer } from 'react-toastify';
 import MyOrders from "./components/MyOrders";
+import BecomeDeliveryPartner from "./pages/BecomeDeliveryPartner";
 import 'react-toastify/dist/ReactToastify.css';
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/my-orders" element={<MyOrders />} />
+          <Route path="/become-delivery-partner" element={<BecomeDeliveryPartner />} />
         </Routes>
       </main>
       <Footer />

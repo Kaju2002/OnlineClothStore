@@ -195,6 +195,7 @@ const Navbar = () => {
                     <Link to="/login" className="block px-4 py-2 text-gray-700 hover:bg-gray-50" onClick={() => handleDropdown("")}>Login</Link>
                     <Link to="/register" className="block px-4 py-2 text-gray-700 hover:bg-gray-50" onClick={() => handleDropdown("")}>Registration</Link>
                     <Link to="/about" className="block px-4 py-2 text-gray-700 hover:bg-gray-50" onClick={() => handleDropdown("")}>About Us</Link>
+                    <Link to="/become-delivery-partner" className="block px-4 py-2 text-gray-700 hover:bg-gray-50" onClick={() => handleDropdown("")}>Become Delivery Partner</Link>
                   </div>
                 )}
               </div>
