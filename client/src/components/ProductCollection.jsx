@@ -12,6 +12,10 @@ const ProductCollection = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [reviewedProducts, setReviewedProducts] = useState([]);
+  const [lastProduct, setLastProduct] = useState(null);
+  const pageSize = 6;
 
   // Fetch categories
   useEffect(() => {
@@ -76,8 +80,44 @@ const ProductCollection = () => {
       }
     };
 
+    // Fetch reviewed products for sidebar
+    const fetchReviewedProducts = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/reviews/my-products`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (data.success && data.data && data.data.products) {
+          setReviewedProducts(data.data.products);
+        } else {
+          setReviewedProducts([]);
+        }
+      } catch {
+        setReviewedProducts([]);
+      }
+    };
+
+    // Fetch last product for sidebar
+    const fetchLastProduct = async () => {
+      try {
+        let url = `${import.meta.env.VITE_API_BASE_URL}/api/products?`;
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.success && data.data && data.data.products && data.data.products.length > 0) {
+          setLastProduct(data.data.products[data.data.products.length - 1]);
+        } else {
+          setLastProduct(null);
+        }
+      } catch {
+        setLastProduct(null);
+      }
+    };
+
     fetchAllProducts();
     fetchFilteredProducts();
+    fetchReviewedProducts();
+    fetchLastProduct();
   }, [selectedCategory, searchQuery, priceRange]);
 
   // Handle category selection
@@ -256,58 +296,29 @@ const ProductCollection = () => {
               Reviewed By You
             </h3>
             <div className="space-y-3">
-              {/* ...existing reviewed by you content... */}
-            </div>
-          </div>
-
-          {/* Reviewed By You Section */}
-          <div className="mt-8">
-            
-            
-            <div className="space-y-3">
-              {[
-                { 
-                  id: 1, 
-                  name: "Casual pullover", 
-                  price: 45.99, 
-                  image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=80&h=80&fit=crop",
-                  rating: 4
-                },
-                { 
-                  id: 2, 
-                  name: "Denim overshirt", 
-                  price: 89.99, 
-                  image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=80&h=80&fit=crop",
-                  rating: 5
-                },
-                { 
-                  id: 3, 
-                  name: "Oxford pullover", 
-                  price: 34.99, 
-                  image: "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=80&h=80&fit=crop",
-                  rating: 4
-                }
-              ].map((product) => (
-                <div key={product.id} className="flex items-center gap-5 p-5 bg-white rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
-                  <img 
-                    src={product.image} 
-                    alt={product.name}
-                    className="w-28 h-28 object-cover rounded-xl shadow-md border border-gray-100"
+              {lastProduct ? (
+                <div className="flex items-center gap-5 p-5 bg-white rounded-2xl border border-gray-200  hover:shadow-xl transition-shadow cursor-pointer">
+                  <img
+                    src={lastProduct.images?.[0]?.url || 'https://via.placeholder.com/80x80'}
+                    alt={lastProduct.name}
+                    className="w-28 h-28 object-cover rounded-xl"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h4 className="font-semibold text-base text-gray-900 truncate">{product.name}</h4>
-                      <span className="font-bold text-lg text-black">${product.price}</span>
+                      <h4 className="font-semibold text-base text-gray-900 truncate">{lastProduct.name}</h4>
+                      <span className="font-bold text-lg text-black">{lastProduct.variants?.[0]?.price?.regular ? lkr.format(lastProduct.variants[0].price.regular) : ''}</span>
                     </div>
                     <div className="flex items-center space-x-1 mb-2">
                       {[...Array(5)].map((_, i) => (
-                        <span key={i} className={`text-base ${i < product.rating ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
+                        <span key={i} className={`text-base ${i < (lastProduct.averageRating || 0) ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
                       ))}
                     </div>
-                    <p className="text-gray-600 text-sm italic line-clamp-2">“Great quality and fits perfectly. Would recommend to anyone looking for comfort and style!”</p>
+                    <p className="text-gray-600 text-sm italic line-clamp-2">{lastProduct.description || '“Great quality and fits perfectly. Would recommend to anyone looking for comfort and style!”'}</p>
                   </div>
                 </div>
-              ))}
+              ) : (
+                <div className="text-gray-500 text-sm">No reviewed products found.</div>
+              )}
             </div>
           </div>
 
@@ -347,7 +358,6 @@ const ProductCollection = () => {
             </div>
           </div>
 
-          {/* Products Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading ? (
               // Loading skeleton
@@ -361,16 +371,14 @@ const ProductCollection = () => {
                 </div>
               ))
             ) : products && products.length > 0 ? (
-              products.map((product) => {
-                // Get first variant for pricing
+              products.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((product) => {
                 const firstVariant = product.variants?.[0];
                 const regularPrice = firstVariant?.price?.regular;
                 const salePrice = firstVariant?.price?.sale;
                 const hasDiscount = salePrice && salePrice < regularPrice;
-                // Get main image
                 const mainImage = product.images?.find(img => img.isMain)?.url || 
-                                product.images?.[0]?.url || 
-                                'https://via.placeholder.com/300x300';
+                                  product.images?.[0]?.url || 
+                                  'https://via.placeholder.com/300x300';
                 return (
                   <div key={product._id} className="group cursor-pointer">
                     <div className="relative overflow-hidden bg-gray-50 mb-3">
@@ -392,7 +400,6 @@ const ProductCollection = () => {
                       <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100">
                         <Heart className="w-4 h-4" />
                       </button>
-                      {/* Quick view buttons */}
                       <div className="absolute bottom-2 left-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <a href={`/product/${product._id}`}>
                           <Button size="sm" className="flex-1 bg-white text-black hover:bg-gray-100 rounded-none text-xs">
@@ -445,11 +452,29 @@ const ProductCollection = () => {
 
           {/* Pagination */}
           <div className="flex justify-center items-center space-x-2 mt-8">
-            <Button variant="outline" size="sm" className="rounded-none">←</Button>
-            <Button variant="outline" size="sm" className="rounded-none bg-black text-white">1</Button>
-            <Button variant="outline" size="sm" className="rounded-none">2</Button>
-            <Button variant="outline" size="sm" className="rounded-none">3</Button>
-            <Button variant="outline" size="sm" className="rounded-none">→</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-none"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
+            >←</Button>
+            {Array.from({ length: Math.ceil(products.length / pageSize) }).map((_, idx) => (
+              <Button
+                key={idx + 1}
+                variant="outline"
+                size="sm"
+                className={`rounded-none ${currentPage === idx + 1 ? 'bg-black text-white' : ''}`}
+                onClick={() => setCurrentPage(idx + 1)}
+              >{idx + 1}</Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-none"
+              disabled={currentPage === Math.ceil(products.length / pageSize) || products.length === 0}
+              onClick={() => setCurrentPage(currentPage + 1)}
+            >→</Button>
           </div>
         </div>
       </div>

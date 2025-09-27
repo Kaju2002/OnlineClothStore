@@ -65,7 +65,7 @@ const ProductHeader = ({
                 <img 
                   src={bannerImage}
                   alt={altText} 
-                  className="w-full max-w-md h-auto object-cover rounded-lg"
+                  className="w-full max-w-lg h-[300px] object-cover rounded-lg"
                 />
               </div>
             </div>
