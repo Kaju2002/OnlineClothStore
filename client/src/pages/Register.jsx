@@ -376,7 +376,8 @@ export default function RegisterForm() {
                       required
                     />
                   </div>
-                  <div>
+                  <div className="flex items-center">
+                    <span className="px-2 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 text-base select-none">+94</span>
                     <input
                       type="tel"
                       name="phone"
@@ -384,6 +385,7 @@ export default function RegisterForm() {
                       onChange={handleInputChange}
                       placeholder="Enter your phone (optional)"
                       className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
+                      style={{ marginLeft: '-1px' }}
                     />
                   </div>
                 </div>
