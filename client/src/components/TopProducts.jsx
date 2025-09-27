@@ -48,8 +48,7 @@ export default function TopProducts() {
             Best Sellers At Mollee
           </h2>
           <p className="max-w-2xl mx-auto text-sm sm:text-base leading-6 sm:leading-7 font-raleway text-gray-700 px-4">
-            Cillum eu id enim aliquip aute ullamco anim. Culpa deserunt nostrud excepteur voluptate velit ipsum esse
-            enim.
+            Discover our best-selling products, loved by customers for their quality and style. Shop the top picks and elevate your wardrobe with the latest trends.
           </p>
         </div>
 
