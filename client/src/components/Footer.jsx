@@ -145,7 +145,7 @@ const Footer = () => {
             {/* MOLLEE Brand Section */}
             <div className="md:col-span-1">
               <div className="mb-4">
-                <span className="text-2xl font-bold tracking-wide text-gray-900">TrendBite</span>
+                <span className="text-2xl font-bold tracking-wide text-gray-900">TrendByte</span>
               </div>
               <span className="footer-description">
                 Cillum eu id enim aliquip aute ullamco anim. <br />
@@ -237,7 +237,7 @@ const Footer = () => {
           <div className="border-t border-gray-200 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <p className="text-base leading-7 font-raleway text-gray-700 mb-4 md:mb-0">
-                © All right reserved. Mollee 2021
+                © All right reserved. TrendByte 2021
               </p>
               <div className="flex items-center">
                 <span className="text-base leading-7 font-raleway text-gray-700 mr-4">
