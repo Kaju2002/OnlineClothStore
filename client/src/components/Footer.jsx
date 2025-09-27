@@ -145,11 +145,7 @@ const Footer = () => {
             {/* MOLLEE Brand Section */}
             <div className="md:col-span-1">
               <div className="mb-4">
-                <img
-                  src="https://mollee-html-ten.vercel.app/assets/img/svg/logo.svg"
-                  alt="MOLLEE"
-                  className="h-6"
-                />
+                <span className="text-2xl font-bold tracking-wide text-gray-900">TrendBite</span>
               </div>
               <span className="footer-description">
                 Cillum eu id enim aliquip aute ullamco anim. <br />

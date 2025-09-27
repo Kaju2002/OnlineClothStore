@@ -131,7 +131,7 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex items-center">
             <div className="text-xl lg:text-2xl font-black tracking-[0.15em] text-black">
-              NOLLEE
+              TrendBite
               <div className="w-full h-0.5 bg-gradient-to-r from-black via-gray-300 to-transparent mt-1"></div>
             </div>
           </div>
