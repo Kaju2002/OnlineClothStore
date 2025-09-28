@@ -185,6 +185,11 @@ export default function Login() {
               >
                 {loading ? 'Logging in...' : 'Log In'}
               </button>
+              {/* Register link */}
+              <div className="text-center mt-4">
+                <span className="text-gray-600 text-sm">Don't have an account?</span>
+                <a href="/register" className="text-orange-400 hover:text-orange-500 text-sm ml-2">Register</a>
+              </div>
             </form>
           </div>
         </div>
@@ -320,6 +325,11 @@ export default function Login() {
                 >
                   {loading ? 'Logging in...' : 'Log In'}
                 </button>
+                {/* Register link */}
+                <div className="text-center mt-4">
+                  <span className="text-gray-600 text-sm">Don't have an account?</span>
+                  <a href="/register" className="text-orange-400 hover:text-orange-500 text-sm ml-2">Register</a>
+                </div>
               </form>
             </div>
           </div>
