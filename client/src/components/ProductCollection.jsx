@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 const lkr = new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' });
 import { Button } from '../ui/button';
-import { Slider } from '../ui/Slider';
 import { Heart, Search, Star } from 'lucide-react';
 import { X, ChevronDown } from 'lucide-react';
 import { toast } from 'react-toastify';

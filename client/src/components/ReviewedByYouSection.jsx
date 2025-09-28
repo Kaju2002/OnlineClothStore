@@ -25,7 +25,7 @@ const ReviewedByYouSection = () => {
           setProducts([]);
         }
       } catch (error) {
-        setProducts([]);
+        setProducts([],error);
       } finally {
         setLoading(false);
       }
