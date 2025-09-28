@@ -358,19 +358,17 @@ const ProductCollection = () => {
           {/* Season Sale Banner */}
           <div className="mt-8">
             <div 
-              className="relative h-32 bg-cover bg-center rounded overflow-hidden"
+              className="relative h-32 bg-cover bg-center rounded overflow-hidden flex items-center justify-center"
               style={{
-                backgroundImage: "url('https://mollee-html-ten.vercel.app/assets/img/sale-image_1.jpg')"
+                backgroundImage: "url('https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=600&q=80')"
               }}
             >
-              <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                <div className="text-center text-white px-2">
-                  <h3 className="text-lg font-bold mb-1">SEASON</h3>
-                  <h2 className="text-xl font-bold mb-2">SALE</h2>
-                  <button className="bg-white text-black px-3 py-1 text-xs font-semibold hover:bg-gray-100 transition-colors">
-                    SHOP NOW
-                  </button>
-                </div>
+              <div className="text-center text-white px-2 drop-shadow-lg">
+                <h3 className="text-lg font-bold mb-1">SEASON</h3>
+                <h2 className="text-xl font-bold mb-2">SALE</h2>
+                <button className="bg-white text-black px-3 py-1 text-xs font-semibold hover:bg-gray-100 transition-colors">
+                  SHOP NOW
+                </button>
               </div>
             </div>
           </div>
