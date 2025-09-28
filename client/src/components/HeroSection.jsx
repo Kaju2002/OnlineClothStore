@@ -8,14 +8,26 @@ export default function HeroSection() {
     {
       src: "/hero.png",
       alt: "Fashion model wearing white knit sweater",
+      headline: "Meet New Fashion Week",
+      subtext: "New Collection",
+      button: "Shop Now",
+      buttonLink: "/product"
     },
     {
       src: "https://mollee-html-ten.vercel.app/assets/img/first-screen-image.jpg",
       alt: "Fashion model in summer collection",
+      headline: "Discover Urban Elegance",
+      subtext: "Trending Styles",
+      button: "Explore Trends",
+      buttonLink: "/product?tag=trending"
     },
     {
       src: "https://mollee-html-ten.vercel.app/assets/img/slider-banner.jpg",
       alt: "Fashion model in autumn collection",
+      headline: "Refresh Your Wardrobe",
+      subtext: "Summer Essentials",
+      button: "View Collection",
+      buttonLink: "/product?tag=summer"
     },
   ];
 
@@ -74,24 +86,26 @@ export default function HeroSection() {
           <div className="max-w-lg text-center space-y-8 px-4 sm:px-6 lg:px-8">
             <div className="space-y-4">
               <p className="text-xs tracking-[0.2em] text-gray-600 uppercase font-medium">
-                NEW COLLECTION
+                {images[currentImageIndex].subtext}
               </p>
               <div className="w-16 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto"></div>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-black leading-[0.9] tracking-tight">
-              Meet New
-              <br />
-              <span className="inline-block">Fashion Week</span>
+              {images[currentImageIndex].headline.split("\n")[0]}
+              {images[currentImageIndex].headline.includes("\n") && <br />}
+              {images[currentImageIndex].headline.split("\n")[1] && (
+                <span className="inline-block">{images[currentImageIndex].headline.split("\n")[1]}</span>
+              )}
             </h1>
 
             <div className="pt-6">
-              <a href="/product">
+              <a href={images[currentImageIndex].buttonLink}>
                 <Button
                   className="bg-black text-white px-12 py-4 text-sm font-medium tracking-[0.15em] uppercase hover:bg-gray-800 transition-colors duration-300 shadow-lg hover:shadow-xl border-2 border-black hover:border-gray-800 rounded-none relative overflow-hidden group"
                   size="lg"
                 >
-                  <span className="relative z-10">Shop Now</span>
+                  <span className="relative z-10">{images[currentImageIndex].button}</span>
                   <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </Button>
               </a>

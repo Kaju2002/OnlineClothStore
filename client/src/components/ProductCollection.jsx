@@ -3,28 +3,37 @@ const lkr = new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' 
 import { Button } from '../ui/button';
 import { Slider } from '../ui/Slider';
 import { Heart, Search, Star } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 const ProductCollection = () => {
-  const [priceRange, setPriceRange] = useState([0, 100]);
+  // Removed priceRange state
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState('');
+  const [tagOptions, setTagOptions] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [reviewedProducts, setReviewedProducts] = useState([]);
   const [lastProduct, setLastProduct] = useState(null);
   const pageSize = 6;
 
-  // Fetch categories
-  useEffect(() => {
-    // Categories will be extracted from products response
-    // So this effect is not needed
-  }, []);
+  // ...existing code...
 
   // Fetch products from API with category filter
   useEffect(() => {
+    // Extract unique tags from products and set tagOptions
+    const extractTags = (productsArr) => {
+      const tagSet = new Set();
+      productsArr.forEach(product => {
+        if (Array.isArray(product.tags)) {
+          product.tags.forEach(tag => tagSet.add(tag));
+        }
+      });
+      setTagOptions(Array.from(tagSet));
+    };
     // Always fetch all products to get all categories
     const fetchAllProducts = async () => {
       try {
@@ -62,15 +71,16 @@ const ProductCollection = () => {
         let url = `${import.meta.env.VITE_API_BASE_URL}/api/products?`;
         if (selectedCategory) url += `category=${selectedCategory}&`;
         if (searchQuery.trim()) url += `tags=${encodeURIComponent(searchQuery.trim())}&`;
-        if (priceRange[0] !== 0) url += `minPrice=${priceRange[0]}&`;
-        if (priceRange[1] !== 100) url += `maxPrice=${priceRange[1]}&`;
+  // Removed priceRange filter
         url = url.replace(/&$/, '');
         const response = await fetch(url);
         const data = await response.json();
         if (data.success && data.data && data.data.products) {
           setProducts(data.data.products);
+          extractTags(data.data.products);
         } else {
           setProducts([]);
+          setTagOptions([]);
         }
       } catch (error) {
         setProducts([]);
@@ -118,7 +128,7 @@ const ProductCollection = () => {
     fetchFilteredProducts();
     fetchReviewedProducts();
     fetchLastProduct();
-  }, [selectedCategory, searchQuery, priceRange]);
+  }, [selectedCategory, searchQuery]);
 
   // Handle category selection
   const handleCategoryChange = (categoryId) => {
@@ -220,22 +230,61 @@ const ProductCollection = () => {
 
   return (
     <div className="container mx-auto px-4 max-w-6xl py-8">
+      {/* Centered search bar above product grid */}
+      <div className="flex justify-center mb-8">
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full max-w-2xl">
+          <div className="relative w-full md:w-2/3">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search by tag"
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-none text-sm"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="relative w-full md:w-1/3 flex items-center">
+            <div className="w-full relative">
+              <select
+                className="w-full py-2 px-3 pr-8 border border-gray-200 rounded-none text-sm bg-white appearance-none"
+                value={selectedTag}
+                onChange={e => {
+                  setSelectedTag(e.target.value);
+                  setSearchQuery(e.target.value);
+                }}
+              >
+                <option value="">Select Tag</option>
+                {tagOptions.map(tag => (
+                  <option key={tag} value={tag}>{tag}</option>
+                ))}
+              </select>
+              {/* Show cross icon only when a tag is selected, otherwise show dropdown arrow */}
+              <span className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center">
+                {selectedTag ? (
+                  <button
+                    type="button"
+                    className="text-gray-400 hover:text-gray-700 bg-white px-1 rounded"
+                    style={{ pointerEvents: 'auto' }}
+                    onClick={() => {
+                      setSelectedTag('');
+                      setSearchQuery('');
+                    }}
+                    aria-label="Clear tag filter"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                )}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Sidebar */}
         <div className="lg:col-span-1">
-          {/* Search */}
-          <div className="mb-8">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search by tag"
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-none text-sm"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
+          {/* Search bar removed from sidebar */}
 
           {/* Categories */}
           <div className="mb-8">
@@ -271,23 +320,7 @@ const ProductCollection = () => {
             </div>
           </div>
 
-          {/* Price Filter */}
-          <div className="mb-8">
-            <h3 className="font-semibold text-lg mb-4 border-b-2 border-primary inline-block pb-1">Price</h3>
-            <div className="space-y-4">
-              <Slider
-                value={priceRange}
-                onChange={setPriceRange}
-                max={200}
-                step={1}
-                className="w-full"
-              />
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>{lkr.format(priceRange[0])}</span>
-                <span>{lkr.format(priceRange[1])}</span>
-              </div>
-            </div>
-          </div>
+          {/* Price Filter removed */}
 
 
           {/* Reviewed By You Section */}
@@ -345,18 +378,7 @@ const ProductCollection = () => {
 
         {/* Product Grid */}
         <div className="lg:col-span-3">
-          {/* Sort and View Options */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground">Sort by</span>
-              <select className="border border-gray-200 px-3 py-1 text-sm rounded-none">
-                <option>Relevance</option>
-                <option>Price Low to High</option>
-                <option>Price High to Low</option>
-                <option>Newest First</option>
-              </select>
-            </div>
-          </div>
+          {/* Sort and View Options removed */}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading ? (
