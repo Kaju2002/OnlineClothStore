@@ -35,7 +35,7 @@ const BecomeDeliveryPartner = () => {
         title="Become a Delivery Partner"
   bannerImage="https://images.unsplash.com/photo-1521737852567-6949f3f9f2b5?auto=format&fit=crop&w=1200&q=80"
         altText="Delivery Partner Banner"
-        breadcrumbText="Home / Become a Delivery Partner"
+        breadcrumbText="Become a Delivery Partner"
       />
       <div className="container mx-auto px-4 py-12 max-w-5xl">
         <div className="flex flex-col md:flex-row gap-8 items-stretch">
@@ -75,7 +75,7 @@ const BecomeDeliveryPartner = () => {
             </div>
           </div>
           {/* Right Side: Form */}
-          <div className="md:w-1/2 bg-white rounded-lg shadow-lg p-8 flex flex-col justify-center">
+          <div className="md:w-1/2 bg-white rounded-lg shadow-sm p-8 flex flex-col justify-center">
             {submitted ? (
               <div className="text-green-600 text-center text-lg font-semibold py-8">
                 Thank you for applying! We will review your application and contact you soon.

@@ -11,6 +11,7 @@ export default function Login() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({ email: '', password: '' });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -18,14 +19,33 @@ export default function Login() {
       ...prev,
       [name]: value
     }));
-    if (error) setError(''); 
+    setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    if (error) setError('');
+  };
+
+  const validateFields = () => {
+    const errors = { email: '', password: '' };
+    if (!formData.email) {
+      errors.email = 'Email is required.';
+    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      errors.email = 'Please enter a valid email address.';
+    }
+    if (!formData.password) {
+      errors.password = 'Password is required.';
+    }
+    return errors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
+    const errors = validateFields();
+    setFieldErrors(errors);
+    if (errors.email || errors.password) {
+      setLoading(false);
+      return;
+    }
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/users/login`, {
         email: formData.email,
@@ -33,26 +53,28 @@ export default function Login() {
       });
 
       console.log('Login successful:', response.data);
-      
       // Store token if provided (token is in response.data.data.token)
       if (response.data.data && response.data.data.token) {
         localStorage.setItem('authToken', response.data.data.token);
       }
-      
       // Store user data if provided (user is in response.data.data.user)
       if (response.data.data && response.data.data.user) {
         localStorage.setItem('userData', JSON.stringify(response.data.data.user));
       }
-
       // Trigger a custom event to update navbar immediately
       window.dispatchEvent(new Event('authStateChanged'));
-
       // Redirect to home page
       navigate('/');
-      
     } catch (err) {
       console.error('Login error:', err);
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      // Show error under password field if password is wrong
+      if (err.response?.data?.message?.toLowerCase().includes('password')) {
+        setFieldErrors(prev => ({ ...prev, password: err.response.data.message }));
+      } else if (err.response?.data?.message?.toLowerCase().includes('email')) {
+        setFieldErrors(prev => ({ ...prev, email: err.response.data.message }));
+      } else {
+        setError(err.response?.data?.message || 'Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -114,7 +136,6 @@ export default function Login() {
                   {error}
                 </div>
               )}
-              
               <div>
                 <input
                   type="email"
@@ -125,8 +146,10 @@ export default function Login() {
                   className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-sm"
                   required
                 />
+                {fieldErrors.email && (
+                  <div className="text-red-600 text-xs mt-1">{fieldErrors.email}</div>
+                )}
               </div>
-
               <div>
                 <input
                   type="password"
@@ -137,8 +160,10 @@ export default function Login() {
                   className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-sm"
                   required
                 />
+                {fieldErrors.password && (
+                  <div className="text-red-600 text-xs mt-1">{fieldErrors.password}</div>
+                )}
               </div>
-
               <div className="flex items-center justify-between pt-4">
                 <label className="flex items-center">
                   <input 
@@ -149,12 +174,10 @@ export default function Login() {
                     Remember me
                   </span>
                 </label>
-
                 <a href="#" className="text-orange-400 hover:text-orange-500 text-sm">
                   Forgot password?
                 </a>
               </div>
-
               <button
                 type="submit"
                 disabled={loading}
@@ -248,7 +271,6 @@ export default function Login() {
                     {error}
                   </div>
                 )}
-                
                 <div>
                   <input
                     type="email"
@@ -259,8 +281,10 @@ export default function Login() {
                     className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
                     required
                   />
+                  {fieldErrors.email && (
+                    <div className="text-red-600 text-xs mt-1">{fieldErrors.email}</div>
+                  )}
                 </div>
-
                 <div>
                   <input
                     type="password"
@@ -271,8 +295,10 @@ export default function Login() {
                     className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
                     required
                   />
+                  {fieldErrors.password && (
+                    <div className="text-red-600 text-xs mt-1">{fieldErrors.password}</div>
+                  )}
                 </div>
-
                 <div className="flex items-center justify-between pt-4">
                   <label className="flex items-center">
                     <input 
@@ -283,12 +309,10 @@ export default function Login() {
                       Remember me
                     </span>
                   </label>
-
                   <a href="#" className="text-orange-400 hover:text-orange-500 text-sm">
                     Forgot password?
                   </a>
                 </div>
-
                 <button
                   type="submit"
                   disabled={loading}

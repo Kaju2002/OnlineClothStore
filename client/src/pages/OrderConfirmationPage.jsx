@@ -34,9 +34,15 @@ const OrderConfirmationPage = () => {
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Success Header */}
         <div className="text-center mb-12">
-          <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
-              <CheckCircle className="w-12 h-12 text-green-600" />
+          <div className="flex flex-col items-center mb-6">
+            <img
+              src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80"
+              alt="Order Confirmed - Cloth Store"
+              className="w-32 h-32 object-cover mx-auto rounded-full shadow-lg border-4 border-green-100"
+              style={{ background: '#e6f9ed' }}
+            />
+            <div className="mt-4 text-xl font-bold text-green-700" style={{ fontFamily: 'Josefin Sans, sans-serif' }}>
+              Welcome Again!
             </div>
           </div>
           
@@ -155,6 +161,28 @@ const OrderConfirmationPage = () => {
               
               <div className="space-y-3">
                 <div className="flex items-center">
+                  <span className="w-4 h-4 text-gray-500 mr-3">🏪</span>
+                  <span 
+                    style={{ 
+                      color: 'rgb(0, 0, 0)',
+                      font: '16px / 24px Raleway, sans-serif'
+                    }}
+                  >
+                    Tradevite Online Cloth Store
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <MapPin className="w-4 h-4 text-gray-500 mr-3" />
+                  <span 
+                    style={{ 
+                      color: 'rgb(0, 0, 0)',
+                      font: '16px / 24px Raleway, sans-serif'
+                    }}
+                  >
+                    123 Main Road, Colombo, Sri Lanka
+                  </span>
+                </div>
+                <div className="flex items-center">
                   <Phone className="w-4 h-4 text-gray-500 mr-3" />
                   <span 
                     style={{ 
@@ -162,10 +190,9 @@ const OrderConfirmationPage = () => {
                       font: '16px / 24px Raleway, sans-serif'
                     }}
                   >
-                    {orderData.customer.phone}
+                    +94 77 123 4567
                   </span>
                 </div>
-                
                 <div className="flex items-center">
                   <span className="w-4 h-4 text-gray-500 mr-3">@</span>
                   <span 
@@ -174,7 +201,18 @@ const OrderConfirmationPage = () => {
                       font: '16px / 24px Raleway, sans-serif'
                     }}
                   >
-                    {orderData.customer.email}
+                    Tradevite@gmail.com
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="w-4 h-4 text-gray-500 mr-3">🕒</span>
+                  <span 
+                    style={{ 
+                      color: 'rgb(0, 0, 0)',
+                      font: '16px / 24px Raleway, sans-serif'
+                    }}
+                  >
+                    Business Hours: Mon-Sat 9:00 AM - 7:00 PM
                   </span>
                 </div>
               </div>

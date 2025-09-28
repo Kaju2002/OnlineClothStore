@@ -169,19 +169,19 @@ const Footer = () => {
             <div className="md:col-span-1">
               <h3 className="footer-title">About</h3>
               <nav className="space-y-1">
-                <a href="#" className="footer-nav__link">
+                <a href="/about" className="footer-nav__link">
                   About us
                 </a>
-                <a href="#" className="footer-nav__link">
+                <a href="/product" className="footer-nav__link">
                   Collections
                 </a>
-                <a href="#" className="footer-nav__link">
+                <a href="/product" className="footer-nav__link">
                   Shop
                 </a>
-                <a href="#" className="footer-nav__link">
+                <a href="/blog" className="footer-nav__link">
                   Blog
                 </a>
-                <a href="#" className="footer-nav__link">
+                <a href="/contact" className="footer-nav__link">
                   Contact us
                 </a>
               </nav>
