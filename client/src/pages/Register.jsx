@@ -17,6 +17,7 @@ export default function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -33,21 +34,54 @@ export default function RegisterForm() {
     setLoading(true);
     setError('');
     setSuccess('');
+    setFieldErrors({});
+
+    // Validation
+    const errors = {};
+    // First Name
+    if (!formData.firstName.trim()) errors.firstName = 'First name is required';
+    // Last Name
+    if (!formData.lastName.trim()) errors.lastName = 'Last name is required';
+    // Email
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/^([a-zA-Z0-9_\-.]+)@([a-zA-Z0-9_\-.]+)\.([a-zA-Z]{2,5})$/.test(formData.email)) {
+      errors.email = 'Enter a valid email address';
+    }
+    // Password
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters';
+    } else if (!/(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}/.test(formData.password)) {
+      errors.password = 'Password must contain uppercase, lowercase, number, and special character';
+    }
+    // Confirm Password
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+    // Phone (accepts 764539863, 0774539863, +94764539863, +94 764539863)
+    if (formData.phone) {
+      const phone = formData.phone.trim().replace(/\s+/g, '');
+      const valid = /^7\d{8}$/.test(phone) || /^0\d{9}$/.test(phone) || /^\+947\d{8}$/.test(phone) || /^\+94\d{9}$/.test(phone);
+      if (!valid) {
+        errors.phone = 'Enter a valid Sri Lankan mobile number (e.g. 764539863, 0774539863, +94764539863, +94 764539863)';
+      }
+    }
+    // Privacy Policy
+    if (!formData.agreeToPrivacy) {
+      errors.agreeToPrivacy = 'You must agree to the privacy policy';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Basic validation
-      if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-        throw new Error('Please fill in all required fields');
-      }
-      
-      if (formData.password !== formData.confirmPassword) {
-        throw new Error('Passwords do not match');
-      }
-      
-      if (!formData.agreeToPrivacy) {
-        throw new Error('Please agree to the privacy policy');
-      }
-
       // Prepare data for API (based on User schema)
       const userData = {
         firstName: formData.firstName,
@@ -60,14 +94,10 @@ export default function RegisterForm() {
       const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/users/register`, userData);
 
       console.log('Registration successful:', response.data);
-      
       setSuccess('Registration successful! Redirecting to login...');
-      
-      // Redirect to login page after successful registration
       setTimeout(() => {
         navigate('/login');
       }, 2000);
-      
     } catch (err) {
       console.error('Registration error:', err);
       setError(err.response?.data?.message || err.message || 'Registration failed. Please try again.');
@@ -151,6 +181,7 @@ export default function RegisterForm() {
                     className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-sm"
                     required
                   />
+                  {fieldErrors.firstName && <div className="text-red-500 text-xs mt-1">{fieldErrors.firstName}</div>}
                 </div>
                 <div>
                   <input
@@ -162,6 +193,7 @@ export default function RegisterForm() {
                     className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-sm"
                     required
                   />
+                  {fieldErrors.lastName && <div className="text-red-500 text-xs mt-1">{fieldErrors.lastName}</div>}
                 </div>
               </div>
 
@@ -177,6 +209,7 @@ export default function RegisterForm() {
                     className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-sm"
                     required
                   />
+                  {fieldErrors.email && <div className="text-red-500 text-xs mt-1">{fieldErrors.email}</div>}
                 </div>
                 <div>
                   <input
@@ -387,6 +420,7 @@ export default function RegisterForm() {
                       className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
                       style={{ marginLeft: '-1px' }}
                     />
+                    {fieldErrors.phone && <div className="text-red-500 text-xs mt-1">{fieldErrors.phone}</div>}
                   </div>
                 </div>
 
@@ -401,6 +435,7 @@ export default function RegisterForm() {
                       className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
                       required
                     />
+                    {fieldErrors.password && <div className="text-red-500 text-xs mt-1">{fieldErrors.password}</div>}
                   </div>
                   <div>
                     <input
@@ -412,6 +447,7 @@ export default function RegisterForm() {
                       className="w-full px-0 py-3 border-0 border-b border-gray-300 bg-transparent text-gray-900 placeholder-gray-500 focus:border-black focus:outline-none text-base"
                       required
                     />
+                    {fieldErrors.confirmPassword && <div className="text-red-500 text-xs mt-1">{fieldErrors.confirmPassword}</div>}
                   </div>
                 </div>
 
@@ -425,6 +461,7 @@ export default function RegisterForm() {
                       className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black mt-1"
                       required
                     />
+                    {fieldErrors.agreeToPrivacy && <div className="text-red-500 text-xs mt-1">{fieldErrors.agreeToPrivacy}</div>}
                     <span className="ml-3 text-gray-700 text-sm leading-relaxed">
                       I agree with the <a href="#" className="text-orange-400 hover:text-orange-500">Privacy policy</a>
                     </span>

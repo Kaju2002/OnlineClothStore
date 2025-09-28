@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import PaymentForm from "./PaymentForm";
+import PaymentForm, { sriLankaZipRegex, sriLankaPhoneRegex } from "./PaymentForm";
 import { Trash2, Plus, Minus, CreditCard, Lock, ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
@@ -272,16 +272,34 @@ const CheckoutPage = () => {
 
   
 
+  // Strict Sri Lankan validation for address fields
   const validateStep = () => {
     const newErrors = {};
     if (currentStep === 2) {
-      // Validate delivery address fields for COD
-      const requiredFields = ['street', 'city', 'state', 'zipCode', 'country', 'phone'];
-      requiredFields.forEach(field => {
-        if (!deliveryAddress[field] || !deliveryAddress[field].trim()) {
-          newErrors[field] = "This field is required";
-        }
-      });
+      if (!deliveryAddress.street || deliveryAddress.street.trim() === "") {
+        newErrors.street = "Street is required";
+      }
+      if (!deliveryAddress.city || deliveryAddress.city.trim() === "") {
+        newErrors.city = "District is required";
+      }
+      if (!deliveryAddress.state || deliveryAddress.state.trim() === "") {
+        newErrors.state = "Province is required";
+      }
+      if (!deliveryAddress.zipCode || deliveryAddress.zipCode.trim() === "") {
+        newErrors.zipCode = "ZIP code is required";
+      } else if (!sriLankaZipRegex.test(deliveryAddress.zipCode)) {
+        newErrors.zipCode = "ZIP code must be exactly 5 digits";
+      }
+      if (!deliveryAddress.country || deliveryAddress.country.trim() === "") {
+        newErrors.country = "Country is required";
+      } else if (deliveryAddress.country.toLowerCase() !== "sri lanka") {
+        newErrors.country = "Country must be Sri Lanka";
+      }
+      if (!deliveryAddress.phone || deliveryAddress.phone.trim() === "") {
+        newErrors.phone = "Phone number is required";
+      } else if (!sriLankaPhoneRegex.test(deliveryAddress.phone)) {
+        newErrors.phone = "Phone number must be 10 digits (e.g., 0771234567 or +94771234567)";
+      }
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
