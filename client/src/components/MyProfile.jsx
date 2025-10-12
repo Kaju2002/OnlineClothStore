@@ -6,6 +6,7 @@ const MyProfile = () => {
   const [updating, setUpdating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
 
 
   // Editable profile state, initialized before any conditional return
@@ -89,10 +90,66 @@ const MyProfile = () => {
     }
   };
 
+  // Helpers for validation
+  const calculateAge = (isoDate) => {
+    if (!isoDate) return null;
+    const dob = new Date(isoDate);
+    if (Number.isNaN(dob.getTime())) return null;
+    const diff = Date.now() - dob.getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+  };
+
+  const validateProfile = (data) => {
+    const errors = {};
+    const phoneRegex = /^\+?[0-9]{7,15}$/; // simple E.164-like check
+
+    if (!data.firstName || !data.firstName.trim()) errors.firstName = 'First name is required.';
+    if (!data.lastName || !data.lastName.trim()) errors.lastName = 'Last name is required.';
+
+    if (!data.phone || !data.phone.trim()) {
+      errors.phone = 'Phone number is required.';
+    } else if (!phoneRegex.test(data.phone.trim())) {
+      errors.phone = 'Enter a valid phone number (include country code, e.g. +94...).';
+    }
+
+    if (data.dateOfBirth) {
+      const age = calculateAge(data.dateOfBirth);
+      if (age !== null && age < 13) errors.dateOfBirth = 'You must be at least 13 years old.';
+    }
+
+    if (!data.address?.street || !data.address.street.trim()) errors['address.street'] = 'Street is required.';
+    if (!data.address?.city || !data.address.city.trim()) errors['address.city'] = 'City is required.';
+    if (!data.address?.country || !data.address.country.trim()) errors['address.country'] = 'Country is required.';
+
+    // state is required
+    if (!data.address?.state || !data.address.state.trim()) errors['address.state'] = 'State / Province is required.';
+
+    // zip code validation: if Sri Lanka require exactly 5 digits, otherwise allow 3-10 alnum
+    const zip = data.address?.zipCode ? data.address.zipCode.trim() : '';
+    if (!zip) {
+      errors['address.zipCode'] = 'ZIP / Postal code is required.';
+    } else if ((data.address?.country || '').toLowerCase().includes('sri') && !/^\d{5}$/.test(zip)) {
+      errors['address.zipCode'] = 'ZIP code must be exactly 5 digits for Sri Lanka.';
+    } else if (!/^[A-Za-z0-9\- ]{3,10}$/.test(zip)) {
+      errors['address.zipCode'] = 'Enter a valid ZIP/postal code.';
+    }
+
+    return errors;
+  };
+
   const handleUpdate = async (e) => {
     e.preventDefault();
     setUpdating(true);
     setShowToast(false);
+    // client-side validation
+    const errors = validateProfile(editProfile);
+    if (Object.keys(errors).length) {
+      setFormErrors(errors);
+      setUpdating(false);
+      return;
+    }
+    setFormErrors({});
+
     try {
       const token = localStorage.getItem('authToken');
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/profile`, {
@@ -108,10 +165,19 @@ const MyProfile = () => {
         setProfile(result.data.user);
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
+        setFormErrors({});
+      } else {
+        // If server returns structured field errors, map them to formErrors
+        if (result.errors && typeof result.errors === 'object') {
+          setFormErrors(result.errors);
+        } else if (result.message) {
+          setError(result.message);
+        }
       }
     } catch (error) {
       console.error("Update error:", error);
-             }
+      setError('Network error. Please try again.');
+    }
     setUpdating(false);
   };
 
@@ -207,6 +273,7 @@ const MyProfile = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
                 style={{ fontFamily: 'Raleway, sans-serif' }}
               />
+              {formErrors.firstName && <p className="text-red-500 text-sm mt-1">{formErrors.firstName}</p>}
             </div>
             <div>
               <label className="block mb-1 text-xs text-gray-500" style={{ fontFamily: 'Raleway, sans-serif' }}>Last Name</label>
@@ -218,6 +285,7 @@ const MyProfile = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
                 style={{ fontFamily: 'Raleway, sans-serif' }}
               />
+              {formErrors.lastName && <p className="text-red-500 text-sm mt-1">{formErrors.lastName}</p>}
             </div>
             <div>
               <label className="block mb-1 text-xs text-gray-500" style={{ fontFamily: 'Raleway, sans-serif' }}>Phone</label>
@@ -229,6 +297,7 @@ const MyProfile = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
                 style={{ fontFamily: 'Raleway, sans-serif' }}
               />
+              {formErrors.phone && <p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>}
             </div>
             <div>
               <label className="block mb-1 text-xs text-gray-500" style={{ fontFamily: 'Raleway, sans-serif' }}>Date of Birth</label>
@@ -240,14 +309,20 @@ const MyProfile = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
                 style={{ fontFamily: 'Raleway, sans-serif' }}
               />
+              {formErrors.dateOfBirth && <p className="text-red-500 text-sm mt-1">{formErrors.dateOfBirth}</p>}
             </div>
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-5 gap-2">
               <label className="block mb-1 text-xs text-gray-500 col-span-5" style={{ fontFamily: 'Raleway, sans-serif' }}>Address</label>
               <input type="text" name="address.street" value={editProfile?.address?.street || ''} onChange={handleChange} placeholder="Street" className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none col-span-2" style={{ fontFamily: 'Raleway, sans-serif' }} />
+              {formErrors['address.street'] && <p className="text-red-500 text-sm mt-1 col-span-2">{formErrors['address.street']}</p>}
               <input type="text" name="address.city" value={editProfile?.address?.city || ''} onChange={handleChange} placeholder="City" className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none" style={{ fontFamily: 'Raleway, sans-serif' }} />
+              {formErrors['address.city'] && <p className="text-red-500 text-sm mt-1">{formErrors['address.city']}</p>}
               <input type="text" name="address.state" value={editProfile?.address?.state || ''} onChange={handleChange} placeholder="State" className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none" style={{ fontFamily: 'Raleway, sans-serif' }} />
+              {formErrors['address.state'] && <p className="text-red-500 text-sm mt-1">{formErrors['address.state']}</p>}
               <input type="text" name="address.zipCode" value={editProfile?.address?.zipCode || ''} onChange={handleChange} placeholder="Zip" className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none" style={{ fontFamily: 'Raleway, sans-serif' }} />
+              {formErrors['address.zipCode'] && <p className="text-red-500 text-sm mt-1">{formErrors['address.zipCode']}</p>}
               <input type="text" name="address.country" value={editProfile?.address?.country || ''} onChange={handleChange} placeholder="Country" className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none" style={{ fontFamily: 'Raleway, sans-serif' }} />
+              {formErrors['address.country'] && <p className="text-red-500 text-sm mt-1">{formErrors['address.country']}</p>}
             </div>
           </div>
           <button
