@@ -1,19 +1,50 @@
 import React, { useState } from "react";
 import { Mail, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ResetPasswordPage = () => {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Reset password request for:", email);
-    setIsSubmitted(true);
+    setError(null);
+    if (!email) return setError('Please enter your email');
+
+    setLoading(true);
+    const base = import.meta.env.VITE_API_BASE_URL || '';
+    const url = `${base}/api/users/forgot-password`;
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const message = data?.message || 'Failed to send reset link';
+          throw new Error(message);
+        }
+        return data;
+      })
+      .then(() => {
+        // expected: { success: true, message: 'Password reset link has been sent to your email' }
+        setIsSubmitted(true);
+      })
+      .catch((err) => {
+        setError(err.message || 'An unexpected error occurred');
+      })
+      .finally(() => setLoading(false));
   };
 
   const handleBackToLogin = () => {
     // Navigate back to login page
-    console.log("Navigate to login page");
+    // If using react-router, navigate to /login
+    if (navigate) navigate('/login');
   };
 
   return (
@@ -121,38 +152,39 @@ const ResetPasswordPage = () => {
                         />
                       </div>
 
+                      {error && (
+                        <div className="text-sm text-red-600">{error}</div>
+                      )}
+
                       <div className="pt-4">
                         <button
                           type="submit"
-                          className="bg-black text-white py-4 px-8 hover:bg-gray-800 transition-colors mb-6"
+                          disabled={loading}
+                          className={`bg-black text-white py-4 px-8 hover:bg-gray-800 transition-colors mb-6 ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
                           style={{ font: '600 16px / 24px Raleway, sans-serif' }}
                         >
-                          Send Reset Link
+                          {loading ? 'Sending...' : 'Send Reset Link'}
                         </button>
-
-                        <div className="flex items-center space-x-2">
-                          <ArrowLeft className="w-4 h-4 text-gray-500" />
-                          <button
-                            type="button"
-                            onClick={handleBackToLogin}
+                        <button
+                          type="button"
+                          onClick={handleBackToLogin}
+                          className="hover:text-red-600 transition-colors"
+                          style={{ 
+                            color: 'rgb(119, 119, 119)',
+                            font: '16px / 24px Raleway, sans-serif'
+                          }}
+                        >
+                          Back to{' '}
+                          <span 
                             className="hover:text-red-600 transition-colors"
                             style={{ 
-                              color: 'rgb(119, 119, 119)',
+                              color: 'rgb(235, 87, 87)',
                               font: '16px / 24px Raleway, sans-serif'
                             }}
                           >
-                            Back to{' '}
-                            <span 
-                              className="hover:text-red-600 transition-colors"
-                              style={{ 
-                                color: 'rgb(235, 87, 87)',
-                                font: '16px / 24px Raleway, sans-serif'
-                              }}
-                            >
-                              Login
-                            </span>
-                          </button>
-                        </div>
+                            Login
+                          </span>
+                        </button>
                       </div>
                     </form>
                   </>

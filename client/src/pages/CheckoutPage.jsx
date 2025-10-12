@@ -47,6 +47,7 @@ const CheckoutPage = () => {
   // const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
   const [discountCode, setDiscountCode] = useState("");
   const [notes, setNotes] = useState("");
+  const [shippingMethod, setShippingMethod] = useState('standard');
   
 
   const [errors, setErrors] = useState({});
@@ -330,6 +331,7 @@ const CheckoutPage = () => {
         billingAddress: {
           ...deliveryAddress
         },
+        shippingMethod,
         paymentMethod: "cash_on_delivery",
         discountCode,
         notes
@@ -608,6 +610,26 @@ const CheckoutPage = () => {
                     </span>
                   </div>
                   <div className="space-y-4">
+                    {/* Shipping Method selector */}
+                    <div className="mb-4">
+                      <h4 className="font-medium mb-2">Shipping Method</h4>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setShippingMethod('standard')}
+                          className={`px-4 py-2 rounded border ${shippingMethod === 'standard' ? 'bg-black text-white' : 'bg-white'}`}
+                        >
+                          Standard
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShippingMethod('express')}
+                          className={`px-4 py-2 rounded border ${shippingMethod === 'express' ? 'bg-black text-white' : 'bg-white'}`}
+                        >
+                          Express
+                        </button>
+                      </div>
+                    </div>
                     {/* Cash on Delivery Option */}
                     <div className="border border-green-200 rounded-lg p-4 bg-green-50">
                       <div className="flex items-center justify-between">
@@ -697,6 +719,7 @@ const CheckoutPage = () => {
                     <p>{deliveryAddress.city}, {deliveryAddress.state} {deliveryAddress.zipCode}</p>
                     <p>{deliveryAddress.country}</p>
                     <p>{deliveryAddress.phone}</p>
+                    <p className="mt-2 font-medium">Shipping method: {shippingMethod === 'express' ? 'Express' : 'Standard'}</p>
                   </div>
                 </div>
 

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import ProductHeader from "../components/ProductHeader";
 import MyProfile from "../components/MyProfile";
 import MyOrders from "../components/MyOrders";
+import ErrorBoundary from "../components/ErrorBoundary";
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState("orders");
@@ -54,7 +55,11 @@ const ProfilePage = () => {
             </div>
 
             {/* Orders Content */}
-            {activeTab === "orders" && <MyOrders />}
+            {activeTab === "orders" && (
+              <ErrorBoundary>
+                <MyOrders />
+              </ErrorBoundary>
+            )}
 
             {/* Profile Content */}
             {activeTab === "profile" && <MyProfile />}

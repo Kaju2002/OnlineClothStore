@@ -43,7 +43,8 @@ const MyOrders = () => {
           setError(result.message || 'Failed to fetch orders.');
         }
       } catch (err) {
-        setError('Failed to fetch orders.',err);
+        console.error('Failed to fetch orders', err);
+        setError(err?.message || 'Failed to fetch orders.');
       } finally {
         setLoading(false);
       }
@@ -61,6 +62,8 @@ const MyOrders = () => {
 
   // Inline cancel UI state
   const [cancelUI, setCancelUI] = useState({ orderId: null, reason: 'Changed my mind', custom: '' });
+  // Rating UI state
+  const [rateUI, setRateUI] = useState({ orderId: null, rating: 5, feedback: '' });
   const cancelOptions = [
     'Changed my mind',
     'Found a better price',
@@ -74,6 +77,52 @@ const MyOrders = () => {
   };
   const closeCancelUI = () => {
     setCancelUI({ orderId: null, reason: 'Changed my mind', custom: '' });
+  };
+
+  const openRateUI = (orderId) => {
+    setRateUI({ orderId, rating: 5, feedback: '' });
+  };
+  const closeRateUI = () => {
+    setRateUI({ orderId: null, rating: 5, feedback: '' });
+  };
+
+  const handleRateSubmit = async (orderId) => {
+    const { rating, feedback } = rateUI;
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        toast.error('Please login to rate delivery.');
+        return;
+      }
+      const url = `${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}/rate-delivery`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ rating, feedback })
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        // Prefer server returned order if present
+        const updatedOrder = result.data?.order || result.data || null;
+        toast.success(result.message || 'Thank you for your feedback');
+        if (updatedOrder && updatedOrder._id) {
+          setOrders(prev => prev.map(o => o._id === orderId ? ({ ...o, ...updatedOrder }) : o));
+        } else {
+          // Safe local merge to avoid removing properties expected by the UI
+          setOrders(prev => prev.map(o => o._id === orderId ? ({ ...o, status: 'delivered', statusDisplay: 'Delivered', deliveryRating: rating, deliveryFeedback: feedback }) : o));
+        }
+        // close modal after a short delay so toast is visible
+        setTimeout(() => closeRateUI(), 500);
+      } else {
+        toast.error(result.message || 'Failed to submit rating');
+      }
+    } catch (error) {
+      console.error('Rate submit error', error);
+      toast.error('Failed to submit rating');
+    }
   };
 
   const handleCancelOrder = async (orderId) => {
@@ -359,6 +408,99 @@ const MyOrders = () => {
                           {order.deliveryAddress ? `${order.deliveryAddress.street}, ${order.deliveryAddress.city}, ${order.deliveryAddress.state} ${order.deliveryAddress.zipCode}, ${order.deliveryAddress.country}` : '-'}
                         </p>
                       </div>
+                    </div>
+                    {/* Rating UI - show for delivered orders or allow rating after delivery */}
+                    <div className="mt-4">
+                      {order.status === 'delivered' && (
+                        <div className="flex items-center space-x-3">
+                          <button
+                            className={`px-3 py-1 rounded text-sm shadow-md transition-colors ${order.deliveryRating ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                            onClick={e => {
+                              e.stopPropagation();
+                              const dr = order.deliveryRating;
+                              const ratingValue = typeof dr === 'number' ? dr : (dr && typeof dr === 'object' ? dr.rating : null);
+                              if (ratingValue != null) {
+                                toast.error('You have already submitted a delivery review for this order.');
+                                return;
+                              }
+                              openRateUI(order._id);
+                            }}
+                            disabled={!!order.deliveryRating}
+                          >
+                            Rate delivery
+                          </button>
+                          {(() => {
+                            const dr = order.deliveryRating ?? order.deliveryRating;
+                            const ratingValue = typeof dr === 'number' ? dr : (dr && typeof dr === 'object' ? dr.rating : null);
+                            if (ratingValue != null) {
+                              return <div className="text-sm text-gray-700">Your rating: {ratingValue} / 5</div>;
+                            }
+                            return null;
+                          })()}
+                        </div>
+                      )}
+
+                      {/* Rating Modal */}
+                      {rateUI.orderId === order._id && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+                          <div className="absolute inset-0 bg-black opacity-40" onClick={closeRateUI} />
+                          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-lg p-6 z-10">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="text-xl font-semibold">Rate your delivery</h3>
+                                <p className="text-sm text-gray-500">Tell us about your delivery experience.</p>
+                              </div>
+                              <button onClick={closeRateUI} className="text-gray-400 hover:text-gray-600">✕</button>
+                            </div>
+
+                            <div className="mt-4">
+                              <div className="flex items-center space-x-2">
+                                {/* Star rating */}
+                                <div className="flex items-center">
+                                  {[1,2,3,4,5].map(i => (
+                                    <button
+                                      key={i}
+                                      type="button"
+                                      onClick={() => setRateUI(ui => ({ ...ui, rating: i }))}
+                                      className={`text-3xl transition-colors ${i <= rateUI.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                                      aria-label={`Rate ${i} stars`}
+                                    >
+                                      ★
+                                    </button>
+                                  ))}
+                                </div>
+                                <div className="text-sm text-gray-600">{rateUI.rating} / 5</div>
+                              </div>
+
+                              <div className="mt-4">
+                                <label className="text-sm font-medium text-gray-700">Feedback (optional)</label>
+                                <textarea
+                                  value={rateUI.feedback}
+                                  onChange={e => setRateUI(ui => ({ ...ui, feedback: e.target.value }))}
+                                  rows={4}
+                                  className="mt-2 w-full border border-gray-200 rounded p-3 text-sm placeholder-gray-400"
+                                  placeholder="Share anything that stood out about the delivery..."
+                                />
+                              </div>
+
+                              <div className="mt-6 flex justify-end gap-3">
+                                <button
+                                  onClick={closeRateUI}
+                                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => handleRateSubmit(order._id)}
+                                  className="px-4 py-2 bg-black text-white rounded hover:bg-gray-900 shadow"
+                                >
+                                  Submit review
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

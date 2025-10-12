@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { Facebook, Twitter, Instagram } from 'lucide-react';
 import axios from 'axios';
 
@@ -174,9 +174,9 @@ export default function Login() {
                     Remember me
                   </span>
                 </label>
-                <a href="#" className="text-orange-400 hover:text-orange-500 text-sm">
+                <Link to="/forgot-password" className="text-orange-400 hover:text-orange-500 text-sm">
                   Forgot password?
-                </a>
+                </Link>
               </div>
               <button
                 type="submit"
@@ -314,9 +314,9 @@ export default function Login() {
                       Remember me
                     </span>
                   </label>
-                  <a href="#" className="text-orange-400 hover:text-orange-500 text-sm">
+                  <Link to="/forgot-password" className="text-orange-400 hover:text-orange-500 text-sm">
                     Forgot password?
-                  </a>
+                  </Link>
                 </div>
                 <button
                   type="submit"

@@ -12,6 +12,7 @@ import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import ProfilePage from "./pages/ProfilePage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SetNewPasswordPage from "./pages/SetNewPasswordPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import BlogPage from "./pages/BlogPage";
 import ContactPage from "./pages/ContactPage";
 import AboutPage from "./pages/AboutPage";
@@ -36,6 +37,7 @@ function App() {
           <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/forgot-password/:token" element={<ForgotPasswordPage />} />
           <Route path="/set-new-password" element={<SetNewPasswordPage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/contact" element={<ContactPage />} />
