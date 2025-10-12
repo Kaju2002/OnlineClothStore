@@ -38,10 +38,19 @@ export default function RegisterForm() {
 
     // Validation
     const errors = {};
-    // First Name
-    if (!formData.firstName.trim()) errors.firstName = 'First name is required';
-    // Last Name
-    if (!formData.lastName.trim()) errors.lastName = 'Last name is required';
+    // First/Last name — letters only
+    // Use Unicode-aware regex if you need international characters: const nameRegex = /^[\p{L}]+$/u;
+    const nameRegex = /^[A-Za-z]+$/;
+    if (!formData.firstName.trim()) {
+      errors.firstName = 'First name is required';
+    } else if (!nameRegex.test(formData.firstName.trim())) {
+      errors.firstName = 'First name must contain only letters';
+    }
+    if (!formData.lastName.trim()) {
+      errors.lastName = 'Last name is required';
+    } else if (!nameRegex.test(formData.lastName.trim())) {
+      errors.lastName = 'Last name must contain only letters';
+    }
     // Email
     if (!formData.email.trim()) {
       errors.email = 'Email is required';

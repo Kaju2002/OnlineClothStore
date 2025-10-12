@@ -42,7 +42,7 @@ const BecomeDeliveryPartner = () => {
     setLoading(true);
     // Web3Forms integration
     const formData = new FormData();
-    formData.append("access_key", "7504f55e-f289-4eac-8d1c-86d2ce008a7b"); 
+    formData.append("access_key", "79b3efa6-70a9-44f7-848f-decfbd9dd944"); 
     formData.append("name", form.name);
     formData.append("email", form.email);
     formData.append("phone", form.phone);

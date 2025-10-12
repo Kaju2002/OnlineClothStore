@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
+import { toast } from 'react-toastify';
 
 const ProductCard = ({ product }) => {
   const [isFavourite, setIsFavourite] = useState(false);
@@ -20,6 +21,69 @@ const ProductCard = ({ product }) => {
     } else {
       wishlist.push(product);
       setIsFavourite(true);
+      // Notify user via Web3Forms (frontend) — mirrors BecomeDeliveryPartner pattern.
+      // Note: Web3Forms will send to the configured recipient; enable autoresponder in your Web3Forms dashboard
+      // to email the end-user (the email provided below).
+      (async () => {
+        try {
+          const token = localStorage.getItem('authToken');
+          if (!token) {
+            toast.info('Added to wishlist. Log in to receive email notifications.');
+            return;
+          }
+
+          // Try to fetch user's email from profile endpoint
+          let userEmail = '';
+          let userName = '';
+          try {
+            const profileRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/profile`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (profileRes.ok) {
+              const json = await profileRes.json().catch(() => null);
+              const user = json?.data?.user || json?.data || null;
+              if (user) {
+                userEmail = user.email || '';
+                userName = (user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.fullName) || '';
+              }
+            }
+          } catch (e) {
+            console.warn('Failed to fetch profile for wishlist notify', e);
+          }
+
+          if (!userEmail) {
+            // If email not available, prompt login or skip notify
+            toast.info('Added to wishlist. Log in to receive email notifications.');
+            return;
+          }
+
+          const formData = new FormData();
+          // Use the same Web3Forms access_key as BecomeDeliveryPartner
+          formData.append('access_key', '79b3efa6-70a9-44f7-848f-decfbd9dd944');
+          formData.append('name', userName || userEmail);
+          formData.append('email', userEmail);
+          formData.append('subject', 'You added an item to your wishlist');
+          formData.append('message', `You added ${typeof product.name === 'string' ? product.name : product._id} to your wishlist. View it here: ${window.location.origin}/product/${product._id}`);
+
+          const res = await fetch('https://api.web3forms.com/submit', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (res.ok) {
+            toast.success('Added to wishlist — notification email queued.');
+          } else {
+            // Try to parse JSON error for clearer debug info
+            const body = await res.json().catch(async () => await res.text().catch(() => null));
+            console.warn('Web3Forms notify failed', res.status, body);
+            const msg = (body && (body.message || body.error)) || (typeof body === 'string' ? body : `status:${res.status}`);
+            toast.warn('Added to wishlist. Notification failed: ' + msg);
+          }
+        } catch (err) {
+          console.warn('Error notifying wishlist add via Web3Forms:', err);
+          toast.success('Added to wishlist.');
+        }
+      })();
     }
     localStorage.setItem("wishlist", JSON.stringify(wishlist));
     window.dispatchEvent(new Event("wishlistChanged"));
